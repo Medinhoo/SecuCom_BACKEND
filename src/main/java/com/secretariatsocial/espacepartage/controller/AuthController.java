@@ -8,6 +8,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,9 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Value("${jwt.refresh-expiration}")
+    private long refreshTokenDurationMs;
+
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
@@ -30,13 +34,16 @@ public class AuthController {
     public ResponseEntity<LoginResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         LoginResponse loginResponse = authService.authenticateUser(loginRequest);
 
+        // Convertir millisecondes en secondes pour maxAge (qui utilise des secondes)
+        int maxAgeSecs = (int) (refreshTokenDurationMs / 1000);
+
         // Créer un cookie sécurisé pour le refresh token
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken())
                 .httpOnly(true)
                 .secure(true) // Activer en production avec HTTPS
                 .sameSite("Strict")
-                .maxAge(7 * 24 * 60 * 60) // 7 jours
-                .path("/auth/refresh") // Restreint au chemin de rafraîchissement
+                .maxAge(maxAgeSecs) // Utiliser la valeur de configuration
+                .path("/api/auth/refresh") // Restreint au chemin de rafraîchissement
                 .build();
 
         // Supprimer le refresh token de la réponse JSON
@@ -49,6 +56,7 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponse> refreshToken(HttpServletRequest request) {
+
         // Récupérer le refresh token du cookie
         String refreshToken = null;
         Cookie[] cookies = request.getCookies();
@@ -70,13 +78,16 @@ public class AuthController {
         // Rafraîchir le token
         LoginResponse response = authService.refreshToken(refreshToken);
 
+        // Convertir millisecondes en secondes
+        int maxAgeSecs = (int) (refreshTokenDurationMs / 1000);
+
         // Créer un nouveau cookie pour le refresh token (mise à jour)
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(true) // Activer en production avec HTTPS
                 .sameSite("Strict")
-                .maxAge(7 * 24 * 60 * 60) // 7 jours
-                .path("/auth/refresh")
+                .maxAge(maxAgeSecs) // Utiliser la même valeur de configuration
+                .path("/api/auth/refresh")
                 .build();
 
         return ResponseEntity.ok()
