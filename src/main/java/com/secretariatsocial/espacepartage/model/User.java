@@ -64,7 +64,7 @@ public class User {
     private boolean active = true;
 
     public enum Role {
-        ROLE_CLIENT,
+        ROLE_ENTREPRISE,
         ROLE_SECRETARIAT,
         ROLE_ADMIN
     }
