@@ -1,4 +1,4 @@
-package com.secretariatsocial.espacepartage.dto;
+package com.secretariatsocial.espacepartage.dto.auth;
 
 public class MessageResponse {
     private String message;
