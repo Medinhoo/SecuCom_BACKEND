@@ -1,11 +1,13 @@
 package com.secretariatsocial.espacepartage.controller;
 
+import com.secretariatsocial.espacepartage.dto.MessageResponse;
 import com.secretariatsocial.espacepartage.dto.auth.LoginRequest;
 import com.secretariatsocial.espacepartage.dto.auth.LoginResponse;
 import com.secretariatsocial.espacepartage.service.AuthService;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -93,5 +95,29 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .body(response);
+    }
+
+    /**
+     * Endpoint pour déconnecter l'utilisateur en supprimant le cookie refresh token
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        try {
+            // Créer un cookie vide avec âge 0 en utilisant ResponseCookie
+            ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "")
+                    .httpOnly(true)
+                    .secure(true) // Même valeur que lors de la création
+                    .sameSite("Strict") // Même valeur que lors de la création
+                    .maxAge(0) // 0 pour supprimer
+                    .path("/api/auth/refresh") // Même chemin que lors de la création
+                    .build();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .body(new MessageResponse("Déconnexion réussie!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Erreur lors de la déconnexion: " + e.getMessage()));
+        }
     }
 }
