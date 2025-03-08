@@ -1,8 +1,8 @@
 package com.secretariatsocial.espacepartage.controller;
 
-import com.secretariatsocial.espacepartage.dto.MessageResponse;
 import com.secretariatsocial.espacepartage.dto.auth.LoginRequest;
 import com.secretariatsocial.espacepartage.dto.auth.LoginResponse;
+import com.secretariatsocial.espacepartage.dto.auth.MessageResponse;
 import com.secretariatsocial.espacepartage.service.AuthService;
 
 import jakarta.servlet.http.Cookie;
