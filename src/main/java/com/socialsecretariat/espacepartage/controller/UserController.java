@@ -251,6 +251,9 @@ public class UserController {
         }
         dto.setRoles(roleNames);
 
+        dto.setCreatedAt(user.getCreatedAt());
+        dto.setLastLogin(user.getLastLogin());
+
         return dto;
     }
 }
