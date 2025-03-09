@@ -7,9 +7,13 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import com.socialsecretariat.espacepartage.dto.PasswordChangeRequest;
 import com.socialsecretariat.espacepartage.dto.UserDto;
+import com.socialsecretariat.espacepartage.exception.ErrorResponse;
+import com.socialsecretariat.espacepartage.exception.InvalidPasswordException;
 import com.socialsecretariat.espacepartage.model.User;
 import com.socialsecretariat.espacepartage.model.User.Role;
 import com.socialsecretariat.espacepartage.service.UserService;
@@ -38,6 +42,16 @@ public class UserController {
      * @throws RuntimeException if user is not found
      */
     @GetMapping("/{id}")
+    /**
+     * Checks if the requested user ID belongs to the currently authenticated user.
+     * This works by:
+     * 1. Using @userService to access the UserService Spring bean
+     * 2. Finding the User entity with the requested ID
+     * 3. Comparing that user's username with the authenticated user's username
+     * 4. The isPresent() check prevents NullPointerException if user ID doesn't
+     * exist
+     */
+    @PreAuthorize("hasRole('ROLE_ADMIN') or @userService.getUserById(#id).isPresent() && @userService.getUserById(#id).get().getUsername() == authentication.principal.username")
     public ResponseEntity<UserDto> getUserById(@PathVariable UUID id) {
         User user = userService.getUserById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
@@ -62,21 +76,22 @@ public class UserController {
                 .toList());
     }
 
-    /**
-     * Searches for users by name (first name or last name).
-     * Only accessible to administrators and secretariat staff.
-     * 
-     * @param query The search term to match against first or last names
-     * @return A list of matching users as DTOs
-     */
-    @GetMapping("/search")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SECRETARIAT')")
-    public ResponseEntity<List<UserDto>> searchUsers(@RequestParam String query) {
-        List<User> users = userService.searchUsersByName(query);
-        return ResponseEntity.ok(users.stream()
-                .map(this::convertToDto)
-                .toList());
-    }
+    // /**
+    // * Searches for users by name (first name or last name).
+    // * Only accessible to administrators (for the moment)
+    // *
+    // * @param query The search term to match against first or last names
+    // * @return A list of matching users as DTOs
+    // */
+    // @GetMapping("/search")
+    // @PreAuthorize("hasRole('ROLE_ADMIN')")
+    // public ResponseEntity<List<UserDto>> searchUsers(@RequestParam String query)
+    // {
+    // List<User> users = userService.searchUsersByName(query);
+    // return ResponseEntity.ok(users.stream()
+    // .map(this::convertToDto)
+    // .toList());
+    // }
 
     /**
      * Creates a new user in the system.
@@ -108,14 +123,28 @@ public class UserController {
     /**
      * Updates an existing user.
      * Accessible to administrators or the user themselves.
-     * Verifies that the provided ID matches the user's ID in the request body.
      * 
      * @param id   The UUID of the user to update
-     * @param user The updated user entity
+     * @param user The updated user entity. Note that the password field can be:
+     *             - Null/empty: The existing password will be preserved
+     *             - Same as current: No change will be made
+     *             - New value: Will be encoded before saving
      * @return The updated user as a DTO
+     * 
+     *         Security:
+     *         - Admin users can update any user
+     *         - Regular users can only update their own profile
+     *         - Password handling is managed in the service layer with proper
+     *         encoding
+     *         - Sensitive data is never exposed through the API response (uses DTO)
+     * 
+     *         Validation:
+     *         - Ensures the ID in the path matches the ID in the request body
+     *         - Full entity validation occurs in the service layer
+     *         - Proper error responses are returned for invalid requests
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or #id == authentication.principal.id")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or @userService.getUserById(#id).isPresent() && @userService.getUserById(#id).get().getUsername() == authentication.principal.username")
     public ResponseEntity<UserDto> updateUser(@PathVariable UUID id, @RequestBody User user) {
         // Ensure the ID in the path matches the ID in the body
         if (!id.equals(user.getId())) {
@@ -124,6 +153,45 @@ public class UserController {
 
         User updatedUser = userService.updateUser(user);
         return ResponseEntity.ok(convertToDto(updatedUser));
+    }
+
+    /**
+     * Updates the password for a user.
+     * - Regular users must provide their current password for verification
+     * - Admins can change passwords without knowing the current password
+     * 
+     * @param id              The UUID of the user whose password will be updated
+     * @param passwordRequest Contains the current and new password
+     * @return The updated user as a DTO, or an error if verification fails
+     */
+    @PutMapping("/{id}/password")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or @userService.getUserById(#id).isPresent() && @userService.getUserById(#id).get().getUsername() == authentication.principal.username")
+    public ResponseEntity<?> updateUserPassword(@PathVariable UUID id,
+            @RequestBody PasswordChangeRequest passwordRequest) {
+        try {
+            // Check if current user is an admin
+            boolean isAdmin = SecurityContextHolder.getContext().getAuthentication()
+                    .getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            User updatedUser;
+            if (isAdmin) {
+                // Admin can update without the current password
+                updatedUser = userService.adminUpdateUserPassword(id, passwordRequest.getNewPassword());
+            } else {
+                // Regular users must verify their current password
+                updatedUser = userService.updateUserPassword(id,
+                        passwordRequest.getCurrentPassword(),
+                        passwordRequest.getNewPassword());
+            }
+
+            return ResponseEntity.ok(convertToDto(updatedUser));
+        } catch (InvalidPasswordException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(
+                    HttpStatus.UNAUTHORIZED.value(),
+                    "Current password is incorrect",
+                    null));
+        }
     }
 
     /**
@@ -140,22 +208,23 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Retrieves users filtered by role.
-     * Only accessible to administrators and secretariat staff.
-     * 
-     * @param role The role to filter by (ROLE_ADMIN, ROLE_SECRETARIAT,
-     *             ROLE_COMPANY)
-     * @return A list of users with the specified role as DTOs
-     */
-    @GetMapping("/by-role/{role}")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SECRETARIAT')")
-    public ResponseEntity<List<UserDto>> getUsersByRole(@PathVariable Role role) {
-        List<User> users = userService.getUsersByRole(role);
-        return ResponseEntity.ok(users.stream()
-                .map(this::convertToDto)
-                .toList());
-    }
+    // /**
+    // * Retrieves users filtered by role.
+    // * Only accessible to administrators and secretariat staff.
+    // *
+    // * @param role The role to filter by (ROLE_ADMIN, ROLE_SECRETARIAT,
+    // * ROLE_COMPANY)
+    // * @return A list of users with the specified role as DTOs
+    // */
+    // @GetMapping("/by-role/{role}")
+    // @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SECRETARIAT')")
+    // public ResponseEntity<List<UserDto>> getUsersByRole(@PathVariable Role role)
+    // {
+    // List<User> users = userService.getUsersByRole(role);
+    // return ResponseEntity.ok(users.stream()
+    // .map(this::convertToDto)
+    // .toList());
+    // }
 
     /**
      * Utility method to convert User entity to UserDto.

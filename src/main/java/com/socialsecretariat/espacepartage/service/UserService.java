@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.socialsecretariat.espacepartage.exception.InvalidPasswordException;
 import com.socialsecretariat.espacepartage.model.User;
 import com.socialsecretariat.espacepartage.repository.UserRepository;
 
@@ -73,29 +74,33 @@ public class UserService {
         // Handle password update if provided
         User existingUser = userRepository.findById(user.getId()).get();
 
-        // Only update password if a new one is provided
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            // Check if the password is already encoded
-            if (!passwordEncoder.matches(user.getPassword(), existingUser.getPassword())) {
-                // This is a new password, encode it
-                user.setPassword(passwordEncoder.encode(user.getPassword()));
-            } else {
-                // This is the same password, keep the existing encoded version
-                user.setPassword(existingUser.getPassword());
-            }
-        } else {
-            // No password provided, keep the existing one
-            user.setPassword(existingUser.getPassword());
-        }
+        // No password provided, keep the existing one by default
+        user.setPassword(existingUser.getPassword());
 
         return userRepository.save(user);
     }
 
     @Transactional
-    public User updateUserPassword(UUID id, String newPassword) {
+    public User updateUserPassword(UUID id, String currentPassword, String newPassword) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new InvalidPasswordException("Current password is incorrect");
+        }
+
+        // Update to new password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User adminUpdateUserPassword(UUID id, String newPassword) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Update to new password (no verification needed for admin)
         user.setPassword(passwordEncoder.encode(newPassword));
         return userRepository.save(user);
     }
