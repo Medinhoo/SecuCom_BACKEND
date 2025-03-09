@@ -14,6 +14,7 @@ import com.socialsecretariat.espacepartage.model.User;
 import com.socialsecretariat.espacepartage.repository.UserRepository;
 import com.socialsecretariat.espacepartage.security.JwtUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,6 +52,9 @@ public class AuthService {
 
                 User user = userRepository.findByUsername(userDetails.getUsername())
                                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+                user.setLastLogin(LocalDateTime.now());
+                userRepository.save(user);
 
                 return new LoginResponse(
                                 jwt,

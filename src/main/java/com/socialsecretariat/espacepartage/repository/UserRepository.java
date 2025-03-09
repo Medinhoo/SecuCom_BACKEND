@@ -6,19 +6,30 @@ import org.springframework.stereotype.Repository;
 import com.socialsecretariat.espacepartage.model.User;
 
 import java.util.Optional;
+import java.util.UUID;
+import java.util.List;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, UUID> {
 
-    // Trouver un utilisateur par son username
+    // Find a user by username
     Optional<User> findByUsername(String username);
 
-    // Trouver un utilisateur par son email
+    // Find a user by email
     Optional<User> findByEmail(String email);
 
-    // Vérifier si un username existe déjà
+    // Check if a username already exists
     Boolean existsByUsername(String username);
 
-    // Vérifier si un email existe déjà
+    // Check if an email already exists
     Boolean existsByEmail(String email);
+
+    // Find users by role
+    List<User> findByRolesContaining(User.Role role);
+
+    // Find active users
+    List<User> findByAccountStatus(User.AccountStatus status);
+
+    // Find users by first name and last name (for search functionality)
+    List<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(String firstName, String lastName);
 }

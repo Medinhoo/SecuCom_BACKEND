@@ -26,19 +26,31 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
         List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.name()))
                 .collect(Collectors.toList());
 
+        // Map our custom User entity to Spring Security's UserDetails interface
+        // Parameters:
+        // 1. username - the user's username
+        // 2. password - the encoded password
+        // 3. enabled - true if the account is ACTIVE (user can log in)
+        // 4. accountNonExpired - true if the account is not expired (we don't use
+        // expiration, so always true)
+        // 5. credentialsNonExpired - true if credentials haven't expired (we don't use
+        // credential expiration, so always true)
+        // 6. accountNonLocked - true if the account is not locked (false when status is
+        // LOCKED)
+        // 7. authorities - the user's granted authorities/roles
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                user.isActive(),
+                user.getAccountStatus() == User.AccountStatus.ACTIVE,
                 true,
                 true,
-                true,
+                user.getAccountStatus() != User.AccountStatus.LOCKED,
                 authorities);
     }
 }
