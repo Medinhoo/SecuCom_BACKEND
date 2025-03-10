@@ -1,14 +1,18 @@
 package com.socialsecretariat.espacepartage.service;
 
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.socialsecretariat.espacepartage.exception.InvalidPasswordException;
 import com.socialsecretariat.espacepartage.model.User;
+import com.socialsecretariat.espacepartage.model.User.AccountStatus;
 import com.socialsecretariat.espacepartage.repository.UserRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -65,19 +69,78 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    /**
+     * Updates only the provided fields of an existing user.
+     * 
+     * @param userId  The UUID of the user to update
+     * @param updates Map containing only the fields to update
+     * @return The updated user entity
+     * @throws RuntimeException         If the user cannot be found
+     * @throws IllegalArgumentException If validation fails for any field
+     */
     @Transactional
-    public User updateUser(User user) {
-        // Check if user exists
-        userRepository.findById(user.getId())
+    public User updateUser(UUID userId, Map<String, Object> updates, Authentication authentication) {
+        // Find the existing user
+        User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Handle password update if provided
-        User existingUser = userRepository.findById(user.getId()).get();
+        // Update only the provided fields
+        if (updates.containsKey("firstName")) {
+            String firstName = (String) updates.get("firstName");
+            existingUser.setFirstName(firstName);
+        }
 
-        // No password provided, keep the existing one by default
-        user.setPassword(existingUser.getPassword());
+        if (updates.containsKey("lastName")) {
+            String lastName = (String) updates.get("lastName");
+            existingUser.setLastName(lastName);
+        }
 
-        return userRepository.save(user);
+        if (updates.containsKey("email")) {
+            String email = (String) updates.get("email");
+            // Check if email is being changed and if it's already in use
+            if (!email.equals(existingUser.getEmail()) &&
+                    userRepository.existsByEmail(email)) {
+                throw new RuntimeException("Email is already in use");
+            }
+            existingUser.setEmail(email);
+        }
+
+        if (updates.containsKey("phoneNumber")) {
+            String phoneNumber = (String) updates.get("phoneNumber");
+            existingUser.setPhoneNumber(phoneNumber);
+        }
+
+        // if (updates.containsKey("username")) {
+        // String username = (String) updates.get("username");
+        // // Check if username is being changed and if it's already in use
+        // if (!username.equals(existingUser.getUsername()) &&
+        // userRepository.existsByUsername(username)) {
+        // throw new RuntimeException("Username is already in use");
+        // }
+        // existingUser.setUsername(username);
+        // }
+
+        // Handle account status update (admin only)
+        if (updates.containsKey("accountStatus")) {
+            // Check if current user has admin role
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin) {
+                throw new AccessDeniedException("Only administrators can update account status");
+            }
+
+            // Handle the enum conversion safely
+            String statusValue = (String) updates.get("accountStatus");
+            try {
+                AccountStatus newStatus = AccountStatus.valueOf(statusValue);
+                existingUser.setAccountStatus(newStatus);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid account status value: " + statusValue);
+            }
+        }
+
+        return userRepository.save(existingUser);
     }
 
     @Transactional

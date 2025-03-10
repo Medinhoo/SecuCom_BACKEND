@@ -2,11 +2,13 @@ package com.socialsecretariat.espacepartage.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -121,37 +123,35 @@ public class UserController {
     }
 
     /**
-     * Updates an existing user.
+     * Updates an existing user with partial information.
      * Accessible to administrators or the user themselves.
      * 
-     * @param id   The UUID of the user to update
-     * @param user The updated user entity. Note that the password field can be:
-     *             - Null/empty: The existing password will be preserved
-     *             - Same as current: No change will be made
-     *             - New value: Will be encoded before saving
+     * @param id      The UUID of the user to update
+     * @param updates A map containing only the fields to be updated
      * @return The updated user as a DTO
      * 
      *         Security:
      *         - Admin users can update any user
      *         - Regular users can only update their own profile
-     *         - Password handling is managed in the service layer with proper
-     *         encoding
+     *         - Password updates are not handled through this endpoint
      *         - Sensitive data is never exposed through the API response (uses DTO)
      * 
      *         Validation:
-     *         - Ensures the ID in the path matches the ID in the request body
-     *         - Full entity validation occurs in the service layer
+     *         - Only provided fields will be updated
+     *         - Other fields will retain their existing values
+     *         - Validation for uniqueness of username and email is performed
      *         - Proper error responses are returned for invalid requests
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN') or @userService.getUserById(#id).isPresent() && @userService.getUserById(#id).get().getUsername() == authentication.principal.username")
-    public ResponseEntity<UserDto> updateUser(@PathVariable UUID id, @RequestBody User user) {
-        // Ensure the ID in the path matches the ID in the body
-        if (!id.equals(user.getId())) {
-            return ResponseEntity.badRequest().body(null);
+    public ResponseEntity<UserDto> updateUser(@PathVariable UUID id, @RequestBody Map<String, Object> updates,
+            Authentication authentication) {
+        // Verify the update is not trying to change the ID
+        if (updates.containsKey("id") && !id.equals(updates.get("id"))) {
+            throw new IllegalArgumentException("User ID in path must match ID in request body");
         }
 
-        User updatedUser = userService.updateUser(user);
+        User updatedUser = userService.updateUser(id, updates, authentication);
         return ResponseEntity.ok(convertToDto(updatedUser));
     }
 
