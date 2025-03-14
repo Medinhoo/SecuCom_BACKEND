@@ -5,7 +5,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.socialsecretariat.espacepartage.model.SocialSecretariat;
 import com.socialsecretariat.espacepartage.model.User;
+import com.socialsecretariat.espacepartage.repository.SocialSecretariatRepository;
 import com.socialsecretariat.espacepartage.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -16,7 +18,10 @@ import java.util.Set;
 public class DataInitializer {
 
     @Bean
-    public CommandLineRunner initData(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public CommandLineRunner initData(
+            UserRepository userRepository,
+            SocialSecretariatRepository socialSecretariatRepository,
+            PasswordEncoder passwordEncoder) {
         return args -> {
             // Create an admin user if none exists
             if (userRepository.count() == 0) {
@@ -73,6 +78,31 @@ public class DataInitializer {
 
                 userRepository.save(company);
                 System.out.println("Company user created successfully.");
+            }
+
+            // Create a sample social secretariat if none exists
+            if (socialSecretariatRepository.count() == 0) {
+                SocialSecretariat socialSecretariat = new SocialSecretariat();
+                socialSecretariat.setName("Acerta");
+                socialSecretariat.setCompanyNumber("BE0123456789");
+                socialSecretariat.setAddress("123 Main Street, 1000 Brussels, Belgium");
+                socialSecretariat.setPhone("+32 2 123 45 67");
+                socialSecretariat.setEmail("contact@acerta.be");
+                socialSecretariat.setWebsite("https://www.acerta.be");
+
+                socialSecretariatRepository.save(socialSecretariat);
+                System.out.println("Sample social secretariat created successfully.");
+
+                SocialSecretariat socialSecretariat2 = new SocialSecretariat();
+                socialSecretariat2.setName("Securex");
+                socialSecretariat2.setCompanyNumber("BE9876543210");
+                socialSecretariat2.setAddress("456 Business Avenue, 2000 Antwerp, Belgium");
+                socialSecretariat2.setPhone("+32 3 765 43 21");
+                socialSecretariat2.setEmail("info@securex.be");
+                socialSecretariat2.setWebsite("https://www.securex.be");
+
+                socialSecretariatRepository.save(socialSecretariat2);
+                System.out.println("Second sample social secretariat created successfully.");
             }
         };
     }
