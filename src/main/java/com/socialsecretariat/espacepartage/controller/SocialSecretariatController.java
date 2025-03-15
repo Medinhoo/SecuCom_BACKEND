@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/socialSecretariat")
+@RequestMapping("/social-secretariat")
 public class SocialSecretariatController {
 
     private final SocialSecretariatService socialSecretariatService;

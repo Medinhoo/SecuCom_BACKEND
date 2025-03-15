@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Optional;
+
+import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,11 +16,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.socialsecretariat.espacepartage.dto.PasswordChangeRequest;
+import com.socialsecretariat.espacepartage.dto.SecretariatEmployeeDto;
+import com.socialsecretariat.espacepartage.dto.SecretariatEmployeeUpdateDto;
 import com.socialsecretariat.espacepartage.dto.UserDto;
 import com.socialsecretariat.espacepartage.exception.ErrorResponse;
 import com.socialsecretariat.espacepartage.exception.InvalidPasswordException;
+import com.socialsecretariat.espacepartage.model.SecretariatEmployee;
 import com.socialsecretariat.espacepartage.model.User;
-import com.socialsecretariat.espacepartage.model.User.Role;
+import com.socialsecretariat.espacepartage.service.SecretariatEmployeeService;
+import com.socialsecretariat.espacepartage.service.SocialSecretariatService;
 import com.socialsecretariat.espacepartage.service.UserService;
 
 /**
@@ -30,9 +37,13 @@ import com.socialsecretariat.espacepartage.service.UserService;
 public class UserController {
 
     private final UserService userService;
+    private final SecretariatEmployeeService secretariatEmployeeService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService,
+            SocialSecretariatService socialSecretariatService,
+            SecretariatEmployeeService secretariatEmployeeService) {
         this.userService = userService;
+        this.secretariatEmployeeService = secretariatEmployeeService;
     }
 
     /**
@@ -44,24 +55,24 @@ public class UserController {
      * @throws RuntimeException if user is not found
      */
     @GetMapping("/{id}")
-    /**
-     * Checks if the requested user ID belongs to the currently authenticated user.
-     * This works by:
-     * 1. Using @userService to access the UserService Spring bean
-     * 2. Finding the User entity with the requested ID
-     * 3. Comparing that user's username with the authenticated user's username
-     * 4. The isPresent() check prevents NullPointerException if user ID doesn't
-     * exist
-     */
     @PreAuthorize("hasRole('ROLE_ADMIN') or @userService.getUserById(#id).isPresent() && @userService.getUserById(#id).get().getUsername() == authentication.principal.username")
     public ResponseEntity<UserDto> getUserById(@PathVariable UUID id) {
-        User user = userService.getUserById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+        // First check if it's a secretariat employee
+        Optional<SecretariatEmployee> employeeOpt = userService.getSecretariatEmployeeById(id);
 
-        // Convert User entity to DTO to avoid exposing sensitive data
-        UserDto userDto = convertToDto(user);
+        if (employeeOpt.isPresent()) {
+            // Convert SecretariatEmployee to UserDto using service
+            UserDto userDto = secretariatEmployeeService.convertToUserDto(employeeOpt.get());
+            return ResponseEntity.ok(userDto);
+        } else {
+            // Handle regular user
+            User user = userService.getUserById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
 
-        return ResponseEntity.ok(userDto);
+            // Convert User entity to DTO using service
+            UserDto userDto = userService.convertToDto(user);
+            return ResponseEntity.ok(userDto);
+        }
     }
 
     /**
@@ -73,27 +84,23 @@ public class UserController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<List<UserDto>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers().stream()
-                .map(this::convertToDto)
-                .toList());
-    }
+        List<UserDto> allUserDtos = new ArrayList<>();
 
-    // /**
-    // * Searches for users by name (first name or last name).
-    // * Only accessible to administrators (for the moment)
-    // *
-    // * @param query The search term to match against first or last names
-    // * @return A list of matching users as DTOs
-    // */
-    // @GetMapping("/search")
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
-    // public ResponseEntity<List<UserDto>> searchUsers(@RequestParam String query)
-    // {
-    // List<User> users = userService.searchUsersByName(query);
-    // return ResponseEntity.ok(users.stream()
-    // .map(this::convertToDto)
-    // .toList());
-    // }
+        // Get regular users and convert to DTOs
+        userService.getAllUsers().forEach(user -> {
+            if (!(user instanceof SecretariatEmployee)) {
+                allUserDtos.add(userService.convertToDto(user));
+            }
+        });
+
+        // Get secretariat employees and convert to DTOs
+        userService.getAllUsers().stream()
+                .filter(user -> user instanceof SecretariatEmployee)
+                .forEach(employee -> allUserDtos.add(
+                        secretariatEmployeeService.convertToUserDto((SecretariatEmployee) employee)));
+
+        return ResponseEntity.ok(allUserDtos);
+    }
 
     /**
      * Creates a new user in the system.
@@ -119,7 +126,39 @@ public class UserController {
 
         User createdUser = userService.createUser(user);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(convertToDto(createdUser));
+                .body(userService.convertToDto(createdUser));
+    }
+
+    /**
+     * Creates a new secretariat employee in the system.
+     * Only accessible to administrators.
+     * 
+     * @param employee      The employee to create
+     * @param secretariatId The ID of the secretariat
+     * @return The created employee as a DTO
+     */
+    @PostMapping("/secretariat-employees")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<UserDto> createSecretariatEmployee(
+            @RequestBody SecretariatEmployee employee,
+            @RequestParam UUID secretariatId) {
+
+        // Check if username or email already exists
+        if (userService.existsByUsername(employee.getUsername())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(null); // Username already exists
+        }
+
+        if (userService.existsByEmail(employee.getEmail())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(null); // Email already exists
+        }
+
+        // Create employee with secretariat association
+        SecretariatEmployee createdEmployee = userService.createSecretariatEmployee(employee, secretariatId);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(secretariatEmployeeService.convertToUserDto(createdEmployee));
     }
 
     /**
@@ -129,18 +168,6 @@ public class UserController {
      * @param id      The UUID of the user to update
      * @param updates A map containing only the fields to be updated
      * @return The updated user as a DTO
-     * 
-     *         Security:
-     *         - Admin users can update any user
-     *         - Regular users can only update their own profile
-     *         - Password updates are not handled through this endpoint
-     *         - Sensitive data is never exposed through the API response (uses DTO)
-     * 
-     *         Validation:
-     *         - Only provided fields will be updated
-     *         - Other fields will retain their existing values
-     *         - Validation for uniqueness of username and email is performed
-     *         - Proper error responses are returned for invalid requests
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN') or @userService.getUserById(#id).isPresent() && @userService.getUserById(#id).get().getUsername() == authentication.principal.username")
@@ -152,7 +179,13 @@ public class UserController {
         }
 
         User updatedUser = userService.updateUser(id, updates, authentication);
-        return ResponseEntity.ok(convertToDto(updatedUser));
+
+        // Check if it's a secretariat employee
+        if (updatedUser instanceof SecretariatEmployee) {
+            return ResponseEntity.ok(secretariatEmployeeService.convertToUserDto((SecretariatEmployee) updatedUser));
+        } else {
+            return ResponseEntity.ok(userService.convertToDto(updatedUser));
+        }
     }
 
     /**
@@ -185,7 +218,13 @@ public class UserController {
                         passwordRequest.getNewPassword());
             }
 
-            return ResponseEntity.ok(convertToDto(updatedUser));
+            // Check if it's a secretariat employee
+            if (updatedUser instanceof SecretariatEmployee) {
+                return ResponseEntity
+                        .ok(secretariatEmployeeService.convertToUserDto((SecretariatEmployee) updatedUser));
+            } else {
+                return ResponseEntity.ok(userService.convertToDto(updatedUser));
+            }
         } catch (InvalidPasswordException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(
                     HttpStatus.UNAUTHORIZED.value(),
@@ -208,52 +247,42 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    // /**
-    // * Retrieves users filtered by role.
-    // * Only accessible to administrators and secretariat staff.
-    // *
-    // * @param role The role to filter by (ROLE_ADMIN, ROLE_SECRETARIAT,
-    // * ROLE_COMPANY)
-    // * @return A list of users with the specified role as DTOs
-    // */
-    // @GetMapping("/by-role/{role}")
-    // @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SECRETARIAT')")
-    // public ResponseEntity<List<UserDto>> getUsersByRole(@PathVariable Role role)
-    // {
-    // List<User> users = userService.getUsersByRole(role);
-    // return ResponseEntity.ok(users.stream()
-    // .map(this::convertToDto)
-    // .toList());
-    // }
+    @GetMapping("/secretariat-employees")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_SECRETARIAT')")
+    public ResponseEntity<List<UserDto>> getAllSecretariatEmployees() {
+        List<SecretariatEmployeeDto> employeeDtos = secretariatEmployeeService.getAllSecretariatEmployees();
+        return ResponseEntity.ok(secretariatEmployeeService.convertDtoToUserDtoList(employeeDtos));
+    }
 
-    /**
-     * Utility method to convert User entity to UserDto.
-     * Prevents sensitive information like passwords from being exposed through the
-     * API.
-     * 
-     * @param user The User entity to convert
-     * @return A UserDto containing only the safe fields to expose
-     */
-    private UserDto convertToDto(User user) {
-        UserDto dto = new UserDto();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setEmail(user.getEmail());
-        dto.setFirstName(user.getFirstName());
-        dto.setLastName(user.getLastName());
-        dto.setPhoneNumber(user.getPhoneNumber());
-        dto.setAccountStatus(user.getAccountStatus().name());
+    @GetMapping("/secretariat-employees/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_SECRETARIAT')")
+    public ResponseEntity<UserDto> getSecretariatEmployeeById(@PathVariable UUID id) {
+        SecretariatEmployeeDto employeeDto = secretariatEmployeeService.getSecretariatEmployeeById(id);
+        return ResponseEntity.ok(secretariatEmployeeService.convertDtoToUserDto(employeeDto));
+    }
 
-        // Convert enum roles to strings
-        List<String> roleNames = new ArrayList<>();
-        for (Role role : user.getRoles()) {
-            roleNames.add(role.name());
-        }
-        dto.setRoles(roleNames);
+    @GetMapping("/secretariat-employees/by-secretariat/{secretariatId}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_SECRETARIAT')")
+    public ResponseEntity<List<UserDto>> getSecretariatEmployeesBySecretariatId(@PathVariable UUID secretariatId) {
+        List<SecretariatEmployeeDto> employeeDtos = secretariatEmployeeService
+                .getSecretariatEmployeesBySecretariatId(secretariatId);
+        return ResponseEntity.ok(secretariatEmployeeService.convertDtoToUserDtoList(employeeDtos));
+    }
 
-        dto.setCreatedAt(user.getCreatedAt());
-        dto.setLastLogin(user.getLastLogin());
+    @PutMapping("/secretariat-employees/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_SECRETARIAT')")
+    public ResponseEntity<UserDto> updateSecretariatEmployee(
+            @PathVariable UUID id,
+            @Valid @RequestBody SecretariatEmployeeUpdateDto employeeDto) {
+        SecretariatEmployeeDto updatedEmployeeDto = secretariatEmployeeService.updateSecretariatEmployee(id,
+                employeeDto);
+        return ResponseEntity.ok(secretariatEmployeeService.convertDtoToUserDto(updatedEmployeeDto));
+    }
 
-        return dto;
+    @DeleteMapping("/secretariat-employees/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Void> deleteSecretariatEmployee(@PathVariable UUID id) {
+        secretariatEmployeeService.deleteSecretariatEmployee(id);
+        return ResponseEntity.noContent().build();
     }
 }

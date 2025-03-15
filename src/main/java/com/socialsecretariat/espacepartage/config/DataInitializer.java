@@ -5,8 +5,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.socialsecretariat.espacepartage.model.SecretariatEmployee;
 import com.socialsecretariat.espacepartage.model.SocialSecretariat;
 import com.socialsecretariat.espacepartage.model.User;
+import com.socialsecretariat.espacepartage.repository.SecretariatEmployeeRepository;
 import com.socialsecretariat.espacepartage.repository.SocialSecretariatRepository;
 import com.socialsecretariat.espacepartage.repository.UserRepository;
 
@@ -21,6 +23,7 @@ public class DataInitializer {
     public CommandLineRunner initData(
             UserRepository userRepository,
             SocialSecretariatRepository socialSecretariatRepository,
+            SecretariatEmployeeRepository secretariatEmployeeRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
             // Create an admin user if none exists
@@ -80,29 +83,104 @@ public class DataInitializer {
                 System.out.println("Company user created successfully.");
             }
 
-            // Create a sample social secretariat if none exists
+            // Create sample social secretariats if none exist
             if (socialSecretariatRepository.count() == 0) {
-                SocialSecretariat socialSecretariat = new SocialSecretariat();
-                socialSecretariat.setName("Acerta");
-                socialSecretariat.setCompanyNumber("BE0123456789");
-                socialSecretariat.setAddress("123 Main Street, 1000 Brussels, Belgium");
-                socialSecretariat.setPhone("+32 2 123 45 67");
-                socialSecretariat.setEmail("contact@acerta.be");
-                socialSecretariat.setWebsite("https://www.acerta.be");
+                SocialSecretariat acerta = new SocialSecretariat();
+                acerta.setName("Acerta");
+                acerta.setCompanyNumber("BE0123456789");
+                acerta.setAddress("123 Main Street, 1000 Brussels, Belgium");
+                acerta.setPhone("+32 2 123 45 67");
+                acerta.setEmail("contact@acerta.be");
+                acerta.setWebsite("https://www.acerta.be");
 
-                socialSecretariatRepository.save(socialSecretariat);
-                System.out.println("Sample social secretariat created successfully.");
+                SocialSecretariat savedAcerta = socialSecretariatRepository.save(acerta);
+                System.out.println("Acerta social secretariat created successfully.");
 
-                SocialSecretariat socialSecretariat2 = new SocialSecretariat();
-                socialSecretariat2.setName("Securex");
-                socialSecretariat2.setCompanyNumber("BE9876543210");
-                socialSecretariat2.setAddress("456 Business Avenue, 2000 Antwerp, Belgium");
-                socialSecretariat2.setPhone("+32 3 765 43 21");
-                socialSecretariat2.setEmail("info@securex.be");
-                socialSecretariat2.setWebsite("https://www.securex.be");
+                SocialSecretariat securex = new SocialSecretariat();
+                securex.setName("Securex");
+                securex.setCompanyNumber("BE9876543210");
+                securex.setAddress("456 Business Avenue, 2000 Antwerp, Belgium");
+                securex.setPhone("+32 3 765 43 21");
+                securex.setEmail("info@securex.be");
+                securex.setWebsite("https://www.securex.be");
 
-                socialSecretariatRepository.save(socialSecretariat2);
-                System.out.println("Second sample social secretariat created successfully.");
+                SocialSecretariat savedSecurex = socialSecretariatRepository.save(securex);
+                System.out.println("Securex social secretariat created successfully.");
+
+                // Create secretariat employees if none exist
+                if (secretariatEmployeeRepository.count() == 0) {
+                    // Create an employee for Acerta
+                    SecretariatEmployee acertaEmployee = new SecretariatEmployee();
+                    acertaEmployee.setFirstName("Jean");
+                    acertaEmployee.setLastName("Dupont");
+                    acertaEmployee.setUsername("jean.dupont");
+                    acertaEmployee.setEmail("jean.dupont@acerta.be");
+                    acertaEmployee.setPhoneNumber("+32 2 123 45 68");
+                    acertaEmployee.setPassword(passwordEncoder.encode("password"));
+                    acertaEmployee.setPosition("HR Consultant");
+                    acertaEmployee.setSpecialization("Payroll");
+                    acertaEmployee.setSecretariat(savedAcerta);
+                    acertaEmployee.setAccountStatus(User.AccountStatus.ACTIVE);
+                    acertaEmployee.setCreatedAt(LocalDateTime.now());
+
+                    Set<User.Role> employeeRoles = new HashSet<>();
+                    employeeRoles.add(User.Role.ROLE_SECRETARIAT);
+                    acertaEmployee.setRoles(employeeRoles);
+
+                    secretariatEmployeeRepository.save(acertaEmployee);
+
+                    // Ensure bidirectional relationship
+                    savedAcerta.getEmployees().add(acertaEmployee);
+                    socialSecretariatRepository.save(savedAcerta);
+
+                    System.out.println("Acerta employee created successfully.");
+
+                    // Create another employee for Acerta
+                    SecretariatEmployee acertaEmployee2 = new SecretariatEmployee();
+                    acertaEmployee2.setFirstName("Sophie");
+                    acertaEmployee2.setLastName("Martin");
+                    acertaEmployee2.setUsername("sophie.martin");
+                    acertaEmployee2.setEmail("sophie.martin@acerta.be");
+                    acertaEmployee2.setPhoneNumber("+32 2 123 45 69");
+                    acertaEmployee2.setPassword(passwordEncoder.encode("password"));
+                    acertaEmployee2.setPosition("Legal Advisor");
+                    acertaEmployee2.setSpecialization("Labor Law");
+                    acertaEmployee2.setSecretariat(savedAcerta);
+                    acertaEmployee2.setAccountStatus(User.AccountStatus.ACTIVE);
+                    acertaEmployee2.setCreatedAt(LocalDateTime.now());
+                    acertaEmployee2.setRoles(employeeRoles);
+
+                    secretariatEmployeeRepository.save(acertaEmployee2);
+
+                    // Ensure bidirectional relationship
+                    savedAcerta.getEmployees().add(acertaEmployee2);
+                    socialSecretariatRepository.save(savedAcerta);
+
+                    System.out.println("Second Acerta employee created successfully.");
+
+                    // Create an employee for Securex
+                    SecretariatEmployee securexEmployee = new SecretariatEmployee();
+                    securexEmployee.setFirstName("Marie");
+                    securexEmployee.setLastName("Dubois");
+                    securexEmployee.setUsername("marie.dubois");
+                    securexEmployee.setEmail("marie.dubois@securex.be");
+                    securexEmployee.setPhoneNumber("+32 3 765 43 22");
+                    securexEmployee.setPassword(passwordEncoder.encode("password"));
+                    securexEmployee.setPosition("Senior Consultant");
+                    securexEmployee.setSpecialization("Social Security");
+                    securexEmployee.setSecretariat(savedSecurex);
+                    securexEmployee.setAccountStatus(User.AccountStatus.ACTIVE);
+                    securexEmployee.setCreatedAt(LocalDateTime.now());
+                    securexEmployee.setRoles(employeeRoles);
+
+                    secretariatEmployeeRepository.save(securexEmployee);
+
+                    // Ensure bidirectional relationship
+                    savedSecurex.getEmployees().add(securexEmployee);
+                    socialSecretariatRepository.save(savedSecurex);
+
+                    System.out.println("Securex employee created successfully.");
+                }
             }
         };
     }

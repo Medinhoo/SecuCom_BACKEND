@@ -19,4 +19,10 @@ public class UserDto {
     private String accountStatus;
     private LocalDateTime createdAt;
     private LocalDateTime lastLogin;
+
+    // Fields specific to SecretariatEmployee
+    private String position;
+    private String specialization;
+    private UUID secretariatId;
+    private String secretariatName;
 }
