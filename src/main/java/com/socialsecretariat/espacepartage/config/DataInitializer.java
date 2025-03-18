@@ -6,10 +6,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.socialsecretariat.espacepartage.model.Company;
+import com.socialsecretariat.espacepartage.model.CompanyContact;
 import com.socialsecretariat.espacepartage.model.SecretariatEmployee;
 import com.socialsecretariat.espacepartage.model.SocialSecretariat;
 import com.socialsecretariat.espacepartage.model.User;
 import com.socialsecretariat.espacepartage.repository.CompanyRepository;
+import com.socialsecretariat.espacepartage.repository.CompanyContactRepository;
 import com.socialsecretariat.espacepartage.repository.SecretariatEmployeeRepository;
 import com.socialsecretariat.espacepartage.repository.SocialSecretariatRepository;
 import com.socialsecretariat.espacepartage.repository.UserRepository;
@@ -29,6 +31,7 @@ public class DataInitializer {
             SocialSecretariatRepository socialSecretariatRepository,
             SecretariatEmployeeRepository secretariatEmployeeRepository,
             CompanyRepository companyRepository,
+            CompanyContactRepository companyContactRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
             // Create an admin user if none exists
@@ -48,7 +51,6 @@ public class DataInitializer {
                 admin.setRoles(roles);
 
                 userRepository.save(admin);
-
                 System.out.println("Admin user created successfully.");
 
                 // Create a sample secretariat user
@@ -214,7 +216,7 @@ public class DataInitializer {
                 company1.setSubscriptionFormula("Premium");
                 company1.setDeclarationFrequency("Mensuelle");
 
-                companyRepository.save(company1);
+                Company savedCompany1 = companyRepository.save(company1);
                 System.out.println("First company created successfully.");
 
                 // Create second company
@@ -241,8 +243,83 @@ public class DataInitializer {
                 company2.setSubscriptionFormula("Standard");
                 company2.setDeclarationFrequency("Trimestrielle");
 
-                companyRepository.save(company2);
+                Company savedCompany2 = companyRepository.save(company2);
                 System.out.println("Second company created successfully.");
+
+                // Create company contacts if none exist
+                if (companyContactRepository.count() == 0) {
+                    // Create contacts for first company
+                    CompanyContact contact1 = new CompanyContact();
+                    contact1.setFirstName("Thomas");
+                    contact1.setLastName("Lambert");
+                    contact1.setUsername("thomas.lambert");
+                    contact1.setEmail("t.lambert@techcorp.be");
+                    contact1.setPhoneNumber("+32 2 555 12 35");
+                    contact1.setPassword(passwordEncoder.encode("password"));
+                    contact1.setFonction("Directeur RH");
+                    contact1.setPermissions("FULL_ACCESS");
+                    contact1.setCompany(savedCompany1);
+                    contact1.setAccountStatus(User.AccountStatus.ACTIVE);
+                    contact1.setCreatedAt(LocalDateTime.now());
+
+                    Set<User.Role> contactRoles = new HashSet<>();
+                    contactRoles.add(User.Role.ROLE_COMPANY);
+                    contact1.setRoles(contactRoles);
+
+                    companyContactRepository.save(contact1);
+
+                    // Ensure bidirectional relationship
+                    savedCompany1.getContacts().add(contact1);
+                    companyRepository.save(savedCompany1);
+
+                    System.out.println("First company contact created successfully.");
+
+                    // Create another contact for first company
+                    CompanyContact contact2 = new CompanyContact();
+                    contact2.setFirstName("Julie");
+                    contact2.setLastName("Dubois");
+                    contact2.setUsername("julie.dubois");
+                    contact2.setEmail("j.dubois@techcorp.be");
+                    contact2.setPhoneNumber("+32 2 555 12 36");
+                    contact2.setPassword(passwordEncoder.encode("password"));
+                    contact2.setFonction("Responsable Paie");
+                    contact2.setPermissions("PAYROLL_ACCESS");
+                    contact2.setCompany(savedCompany1);
+                    contact2.setAccountStatus(User.AccountStatus.ACTIVE);
+                    contact2.setCreatedAt(LocalDateTime.now());
+                    contact2.setRoles(contactRoles);
+
+                    companyContactRepository.save(contact2);
+
+                    // Ensure bidirectional relationship
+                    savedCompany1.getContacts().add(contact2);
+                    companyRepository.save(savedCompany1);
+
+                    System.out.println("Second company contact created successfully.");
+
+                    // Create contact for second company
+                    CompanyContact contact3 = new CompanyContact();
+                    contact3.setFirstName("Marc");
+                    contact3.setLastName("Leroy");
+                    contact3.setUsername("marc.leroy");
+                    contact3.setEmail("m.leroy@belconstruction.be");
+                    contact3.setPhoneNumber("+32 2 555 98 77");
+                    contact3.setPassword(passwordEncoder.encode("password"));
+                    contact3.setFonction("Directeur Administratif");
+                    contact3.setPermissions("FULL_ACCESS");
+                    contact3.setCompany(savedCompany2);
+                    contact3.setAccountStatus(User.AccountStatus.ACTIVE);
+                    contact3.setCreatedAt(LocalDateTime.now());
+                    contact3.setRoles(contactRoles);
+
+                    companyContactRepository.save(contact3);
+
+                    // Ensure bidirectional relationship
+                    savedCompany2.getContacts().add(contact3);
+                    companyRepository.save(savedCompany2);
+
+                    System.out.println("Third company contact created successfully.");
+                }
             }
         };
     }

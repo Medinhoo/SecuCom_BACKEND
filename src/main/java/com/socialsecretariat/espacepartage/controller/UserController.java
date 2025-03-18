@@ -26,6 +26,10 @@ import com.socialsecretariat.espacepartage.model.User;
 import com.socialsecretariat.espacepartage.service.SecretariatEmployeeService;
 import com.socialsecretariat.espacepartage.service.SocialSecretariatService;
 import com.socialsecretariat.espacepartage.service.UserService;
+import com.socialsecretariat.espacepartage.service.CompanyContactService;
+import com.socialsecretariat.espacepartage.dto.CompanyContactDto;
+import com.socialsecretariat.espacepartage.dto.CompanyContactUpdateDto;
+import com.socialsecretariat.espacepartage.model.CompanyContact;
 
 /**
  * REST Controller for User management operations.
@@ -38,12 +42,15 @@ public class UserController {
 
     private final UserService userService;
     private final SecretariatEmployeeService secretariatEmployeeService;
+    private final CompanyContactService companyContactService;
 
     public UserController(UserService userService,
             SocialSecretariatService socialSecretariatService,
-            SecretariatEmployeeService secretariatEmployeeService) {
+            SecretariatEmployeeService secretariatEmployeeService,
+            CompanyContactService companyContactService) {
         this.userService = userService;
         this.secretariatEmployeeService = secretariatEmployeeService;
+        this.companyContactService = companyContactService;
     }
 
     /**
@@ -65,13 +72,21 @@ public class UserController {
             UserDto userDto = secretariatEmployeeService.convertToUserDto(employeeOpt.get());
             return ResponseEntity.ok(userDto);
         } else {
-            // Handle regular user
-            User user = userService.getUserById(id)
-                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+            // Check if it's a company contact
+            Optional<CompanyContact> contactOpt = userService.getCompanyContactById(id);
+            if (contactOpt.isPresent()) {
+                // Convert CompanyContact to UserDto using service
+                UserDto userDto = companyContactService.convertToUserDto(contactOpt.get());
+                return ResponseEntity.ok(userDto);
+            } else {
+                // Handle regular user
+                User user = userService.getUserById(id)
+                        .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
 
-            // Convert User entity to DTO using service
-            UserDto userDto = userService.convertToDto(user);
-            return ResponseEntity.ok(userDto);
+                // Convert User entity to DTO using service
+                UserDto userDto = userService.convertToDto(user);
+                return ResponseEntity.ok(userDto);
+            }
         }
     }
 
@@ -88,7 +103,7 @@ public class UserController {
 
         // Get regular users and convert to DTOs
         userService.getAllUsers().forEach(user -> {
-            if (!(user instanceof SecretariatEmployee)) {
+            if (!(user instanceof SecretariatEmployee) && !(user instanceof CompanyContact)) {
                 allUserDtos.add(userService.convertToDto(user));
             }
         });
@@ -98,6 +113,12 @@ public class UserController {
                 .filter(user -> user instanceof SecretariatEmployee)
                 .forEach(employee -> allUserDtos.add(
                         secretariatEmployeeService.convertToUserDto((SecretariatEmployee) employee)));
+
+        // Get company contacts and convert to DTOs
+        userService.getAllUsers().stream()
+                .filter(user -> user instanceof CompanyContact)
+                .forEach(contact -> allUserDtos.add(
+                        companyContactService.convertToUserDto((CompanyContact) contact)));
 
         return ResponseEntity.ok(allUserDtos);
     }
@@ -183,6 +204,8 @@ public class UserController {
         // Check if it's a secretariat employee
         if (updatedUser instanceof SecretariatEmployee) {
             return ResponseEntity.ok(secretariatEmployeeService.convertToUserDto((SecretariatEmployee) updatedUser));
+        } else if (updatedUser instanceof CompanyContact) {
+            return ResponseEntity.ok(companyContactService.convertToUserDto((CompanyContact) updatedUser));
         } else {
             return ResponseEntity.ok(userService.convertToDto(updatedUser));
         }
@@ -222,6 +245,9 @@ public class UserController {
             if (updatedUser instanceof SecretariatEmployee) {
                 return ResponseEntity
                         .ok(secretariatEmployeeService.convertToUserDto((SecretariatEmployee) updatedUser));
+            } else if (updatedUser instanceof CompanyContact) {
+                return ResponseEntity
+                        .ok(companyContactService.convertToUserDto((CompanyContact) updatedUser));
             } else {
                 return ResponseEntity.ok(userService.convertToDto(updatedUser));
             }
@@ -283,6 +309,67 @@ public class UserController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Void> deleteSecretariatEmployee(@PathVariable UUID id) {
         secretariatEmployeeService.deleteSecretariatEmployee(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/company-contacts")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<UserDto> createCompanyContact(
+            @RequestBody CompanyContact contact,
+            @RequestParam UUID companyId) {
+
+        // Check if username or email already exists
+        if (userService.existsByUsername(contact.getUsername())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(null); // Username already exists
+        }
+
+        if (userService.existsByEmail(contact.getEmail())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(null); // Email already exists
+        }
+
+        // Create contact with company association
+        CompanyContact createdContact = userService.createCompanyContact(contact, companyId);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(companyContactService.convertToUserDto(createdContact));
+    }
+
+    @GetMapping("/company-contacts")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_COMPANY')")
+    public ResponseEntity<List<UserDto>> getAllCompanyContacts() {
+        List<CompanyContactDto> contactDtos = companyContactService.getAllCompanyContacts();
+        return ResponseEntity.ok(companyContactService.convertDtoToUserDtoList(contactDtos));
+    }
+
+    @GetMapping("/company-contacts/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_COMPANY')")
+    public ResponseEntity<UserDto> getCompanyContactById(@PathVariable UUID id) {
+        CompanyContactDto contactDto = companyContactService.getCompanyContactById(id);
+        return ResponseEntity.ok(companyContactService.convertDtoToUserDto(contactDto));
+    }
+
+    @GetMapping("/company-contacts/by-company/{companyId}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_COMPANY')")
+    public ResponseEntity<List<UserDto>> getCompanyContactsByCompanyId(@PathVariable UUID companyId) {
+        List<CompanyContactDto> contactDtos = companyContactService.getCompanyContactsByCompanyId(companyId);
+        return ResponseEntity.ok(companyContactService.convertDtoToUserDtoList(contactDtos));
+    }
+
+    @PutMapping("/company-contacts/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_COMPANY')")
+    public ResponseEntity<UserDto> updateCompanyContact(
+            @PathVariable UUID id,
+            @Valid @RequestBody CompanyContactUpdateDto contactDto) {
+        CompanyContactDto updatedContactDto = companyContactService.updateCompanyContact(id, contactDto);
+        return ResponseEntity.ok(companyContactService.convertDtoToUserDto(updatedContactDto));
+    }
+
+    @DeleteMapping("/company-contacts/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Void> deleteCompanyContact(@PathVariable UUID id) {
+        companyContactService.deleteCompanyContact(id);
         return ResponseEntity.noContent().build();
     }
 }

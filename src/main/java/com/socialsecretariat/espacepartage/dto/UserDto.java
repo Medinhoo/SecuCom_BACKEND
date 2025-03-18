@@ -25,4 +25,10 @@ public class UserDto {
     private String specialization;
     private UUID secretariatId;
     private String secretariatName;
+
+    // Fields specific to CompanyContact
+    private String fonction;
+    private String permissions;
+    private UUID companyId;
+    private String companyName;
 }

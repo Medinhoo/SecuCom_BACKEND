@@ -36,7 +36,6 @@ public class CompanyController {
      * @return The created company as a DTO with HTTP 201 status
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
     public ResponseEntity<CompanyDto> createCompany(@Valid @RequestBody CompanyDto companyDto) {
         CompanyDto createdCompany = companyService.createCompany(companyDto);
         return new ResponseEntity<>(createdCompany, HttpStatus.CREATED);
@@ -51,7 +50,6 @@ public class CompanyController {
      * @return The updated company as a DTO
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
     public ResponseEntity<CompanyDto> updateCompany(
             @PathVariable UUID id,
             @Valid @RequestBody CompanyDto companyDto) {
@@ -67,7 +65,6 @@ public class CompanyController {
      * @return The company details as a DTO
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
     public ResponseEntity<CompanyDto> getCompanyById(@PathVariable UUID id) {
         CompanyDto company = companyService.getCompanyById(id);
         return ResponseEntity.ok(company);
@@ -80,7 +77,6 @@ public class CompanyController {
      * @return A list of all companies as DTOs
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
     public ResponseEntity<List<CompanyDto>> getAllCompanies() {
         List<CompanyDto> companies = companyService.getAllCompanies();
         return ResponseEntity.ok(companies);
@@ -94,7 +90,6 @@ public class CompanyController {
      * @return HTTP 204 No Content response
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
     public ResponseEntity<Void> deleteCompany(@PathVariable UUID id) {
         companyService.deleteCompany(id);
         return ResponseEntity.noContent().build();
@@ -108,7 +103,6 @@ public class CompanyController {
      * @return Boolean indicating whether the BCE number exists
      */
     @GetMapping("/check/bce/{bceNumber}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
     public ResponseEntity<Boolean> checkBceNumberExists(@PathVariable String bceNumber) {
         boolean exists = companyService.existsByBceNumber(bceNumber);
         return ResponseEntity.ok(exists);
@@ -122,7 +116,6 @@ public class CompanyController {
      * @return Boolean indicating whether the ONSS number exists
      */
     @GetMapping("/check/onss/{onssNumber}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
     public ResponseEntity<Boolean> checkOnssNumberExists(@PathVariable String onssNumber) {
         boolean exists = companyService.existsByOnssNumber(onssNumber);
         return ResponseEntity.ok(exists);
@@ -136,7 +129,6 @@ public class CompanyController {
      * @return Boolean indicating whether the VAT number exists
      */
     @GetMapping("/check/vat/{vatNumber}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
     public ResponseEntity<Boolean> checkVatNumberExists(@PathVariable String vatNumber) {
         boolean exists = companyService.existsByVatNumber(vatNumber);
         return ResponseEntity.ok(exists);

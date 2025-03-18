@@ -5,7 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -101,4 +103,16 @@ public class Company {
     @Column(name = "declaration_frequency")
     private String declarationFrequency;
 
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<CompanyContact> contacts = new HashSet<>();
+
+    public void addContact(CompanyContact contact) {
+        contacts.add(contact);
+        contact.setCompany(this);
+    }
+
+    public void removeContact(CompanyContact contact) {
+        contacts.remove(contact);
+        contact.setCompany(null);
+    }
 }

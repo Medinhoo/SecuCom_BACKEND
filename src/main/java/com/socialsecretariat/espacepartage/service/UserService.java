@@ -7,11 +7,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.socialsecretariat.espacepartage.exception.InvalidPasswordException;
+import com.socialsecretariat.espacepartage.model.CompanyContact;
+import com.socialsecretariat.espacepartage.model.Company;
 import com.socialsecretariat.espacepartage.model.SecretariatEmployee;
 import com.socialsecretariat.espacepartage.model.SocialSecretariat;
 import com.socialsecretariat.espacepartage.model.User;
 import com.socialsecretariat.espacepartage.model.User.AccountStatus;
 import com.socialsecretariat.espacepartage.model.User.Role;
+import com.socialsecretariat.espacepartage.repository.CompanyContactRepository;
+import com.socialsecretariat.espacepartage.repository.CompanyRepository;
 import com.socialsecretariat.espacepartage.repository.SecretariatEmployeeRepository;
 import com.socialsecretariat.espacepartage.repository.SocialSecretariatRepository;
 import com.socialsecretariat.espacepartage.repository.UserRepository;
@@ -32,15 +36,21 @@ public class UserService {
     private final UserRepository userRepository;
     private final SecretariatEmployeeRepository secretariatEmployeeRepository;
     private final SocialSecretariatRepository socialSecretariatRepository;
+    private final CompanyContactRepository companyContactRepository;
+    private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository,
             SecretariatEmployeeRepository secretariatEmployeeRepository,
             SocialSecretariatRepository socialSecretariatRepository,
+            CompanyContactRepository companyContactRepository,
+            CompanyRepository companyRepository,
             PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.secretariatEmployeeRepository = secretariatEmployeeRepository;
         this.socialSecretariatRepository = socialSecretariatRepository;
+        this.companyContactRepository = companyContactRepository;
+        this.companyRepository = companyRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -76,7 +86,23 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        List<User> users = new ArrayList<>();
+
+        // Get all users
+        List<User> allUsers = userRepository.findAll();
+
+        // Filter and add non-employee and non-contact users
+        allUsers.stream()
+                .filter(user -> !(user instanceof SecretariatEmployee) && !(user instanceof CompanyContact))
+                .forEach(users::add);
+
+        // Add secretariat employees
+        users.addAll(secretariatEmployeeRepository.findAll());
+
+        // Add company contacts
+        users.addAll(companyContactRepository.findAll());
+
+        return users;
     }
 
     @Transactional(readOnly = true)
@@ -90,8 +116,18 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<CompanyContact> getCompanyContactById(UUID id) {
+        return companyContactRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
     public List<SecretariatEmployee> getSecretariatEmployeesBySecretariatId(UUID secretariatId) {
         return secretariatEmployeeRepository.findBySecretariatId(secretariatId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompanyContact> getCompanyContactsByCompanyId(UUID companyId) {
+        return companyContactRepository.findByCompanyId(companyId);
     }
 
     @Transactional(readOnly = true)
@@ -130,9 +166,45 @@ public class UserService {
             // Then delete the employee
             secretariatEmployeeRepository.deleteById(id);
         } else {
-            // Otherwise, just delete the user
-            userRepository.deleteById(id);
+            // Check if it's a company contact
+            Optional<CompanyContact> contact = companyContactRepository.findById(id);
+            if (contact.isPresent()) {
+                // Remove from company
+                Company company = contact.get().getCompany();
+                if (company != null) {
+                    company.removeContact(contact.get());
+                    companyRepository.save(company);
+                }
+
+                // Then delete the contact
+                companyContactRepository.deleteById(id);
+            } else {
+                // Otherwise, just delete the user
+                userRepository.deleteById(id);
+            }
         }
+    }
+
+    @Transactional
+    public CompanyContact createCompanyContact(CompanyContact contact, UUID companyId) {
+        // Check if company exists
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new EntityNotFoundException("Company not found with ID: " + companyId));
+
+        // Encode password
+        contact.setPassword(passwordEncoder.encode(contact.getPassword()));
+
+        // Set company
+        contact.setCompany(company);
+
+        // Save contact
+        CompanyContact savedContact = companyContactRepository.save(contact);
+
+        // Update company's contacts collection
+        company.addContact(savedContact);
+        companyRepository.save(company);
+
+        return savedContact;
     }
 
     /**
@@ -153,13 +225,71 @@ public class UserService {
             // Handle employee update
             return updateSecretariatEmployee(employeeOpt.get(), updates, authentication);
         } else {
-            // Handle regular user update
-            // Find the existing user
-            User existingUser = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            // Check if it's a company contact
+            Optional<CompanyContact> contactOpt = companyContactRepository.findById(userId);
+            if (contactOpt.isPresent()) {
+                // Handle contact update
+                return updateCompanyContact(contactOpt.get(), updates, authentication);
+            } else {
+                // Handle regular user update
+                // Find the existing user
+                User existingUser = userRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
 
-            return updateUserFields(existingUser, updates, authentication);
+                return updateUserFields(existingUser, updates, authentication);
+            }
         }
+    }
+
+    /**
+     * Updates the fields of a CompanyContact
+     */
+    private User updateCompanyContact(CompanyContact contact, Map<String, Object> updates,
+            Authentication authentication) {
+        // First update the base user fields
+        updateUserFields(contact, updates, authentication);
+
+        // Then update contact-specific fields
+        if (updates.containsKey("fonction")) {
+            String fonction = (String) updates.get("fonction");
+            contact.setFonction(fonction);
+        }
+
+        if (updates.containsKey("permissions")) {
+            String permissions = (String) updates.get("permissions");
+            contact.setPermissions(permissions);
+        }
+
+        // Handle company change if provided
+        if (updates.containsKey("companyId")) {
+            UUID companyId = UUID.fromString((String) updates.get("companyId"));
+
+            // Only allow admins to change company
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin) {
+                throw new AccessDeniedException("Only administrators can change company assignment");
+            }
+
+            // Check if new company exists
+            if (!contact.getCompany().getId().equals(companyId)) {
+                Company newCompany = companyRepository.findById(companyId)
+                        .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+
+                // Remove from old company
+                Company oldCompany = contact.getCompany();
+                oldCompany.removeContact(contact);
+                companyRepository.save(oldCompany);
+
+                // Add to new company
+                contact.setCompany(newCompany);
+                newCompany.addContact(contact);
+                companyRepository.save(newCompany);
+            }
+        }
+
+        return companyContactRepository.save(contact);
     }
 
     /**
@@ -347,6 +477,17 @@ public class UserService {
 
         dto.setCreatedAt(user.getCreatedAt());
         dto.setLastLogin(user.getLastLogin());
+
+        // Add CompanyContact specific fields if applicable
+        if (user instanceof CompanyContact) {
+            CompanyContact contact = (CompanyContact) user;
+            dto.setFonction(contact.getFonction());
+            dto.setPermissions(contact.getPermissions());
+            if (contact.getCompany() != null) {
+                dto.setCompanyId(contact.getCompany().getId());
+                dto.setCompanyName(contact.getCompany().getName());
+            }
+        }
 
         return dto;
     }
