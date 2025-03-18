@@ -1,151 +1,104 @@
 package com.socialsecretariat.espacepartage.model;
-// package com.example.socialsecretariat.model;
 
-// import jakarta.persistence.*;
-// import lombok.AllArgsConstructor;
-// import lombok.Data;
-// import lombok.NoArgsConstructor;
-// import org.hibernate.annotations.Where;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 
-// import java.time.LocalDate;
-// import java.util.HashSet;
-// import java.util.Set;
-// import java.util.UUID;
+@Entity
+@Table(name = "TCompany")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Company {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-// @Entity
-// @Table(name = "TCompany")
-// @Data
-// @NoArgsConstructor
-// @AllArgsConstructor
-// public class Company {
+    // nom
+    @Column(nullable = false)
+    private String name;
 
-// @Id
-// @GeneratedValue(strategy = GenerationType.UUID)
-// private UUID id;
+    // numeroTel
+    @Column(name = "phone_number")
+    private String phoneNumber;
 
-// @Column(nullable = false)
-// private String name;
+    @Column
+    private String email;
 
-// @Column(unique = true)
-// private String bceNumber;
+    @Column
+    private String IBAN;
 
-// @Column(unique = true)
-// private String onssNumber;
+    // fondDeSecuriteDexistance
+    @Column(name = "security_fund")
+    private String securityFund;
 
-// private String legalForm;
-// private String companyName;
+    // assuranceAccidentDeTravail
+    @Column(name = "work_accident_insurance")
+    private String workAccidentInsurance;
 
-// @Column(name = "creation_date")
-// private LocalDate creationDate;
+    // numeroBCE
+    @Column(unique = true)
+    private String bceNumber;
 
-// @Column(unique = true)
-// private String vatNumber;
+    // numeroONSS
+    @Column(unique = true)
+    private String onssNumber;
 
-// private String activitySector;
-// private String naceCode;
-// private String jointCommittee;
-// private String holidaySystem;
-// private String workCalendar;
+    // formeJuridique
+    @Column(name = "legal_form")
+    private String legalForm;
 
-// @Column(name = "collaboration_start_date")
-// private LocalDate collaborationStartDate;
+    // denominationSociale
+    @Column(name = "company_name")
+    private String companyName;
 
-// private String subscriptionFormula;
-// private String declarationFrequency;
+    // dateCreation
+    @Column(name = "creation_date")
+    private LocalDate creationDate;
 
-// // Relationships
-// @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval =
-// true)
-// private Set<CompanyContact> contacts = new HashSet<>();
+    // numeroTVA
+    @Column(unique = true, name = "vat_number")
+    private String vatNumber;
 
-// @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval =
-// true)
-// private Set<CompanyWorker> workers = new HashSet<>();
+    // regimeTravail
+    @Column(name = "work_regime")
+    private String workRegime;
 
-// @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval =
-// true)
-// private Set<ServiceRequest> serviceRequests = new HashSet<>();
+    // reductionSalaire
+    @Column(name = "salary_reduction")
+    private String salaryReduction;
 
-// @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval =
-// true)
-// private Set<Dimona> dimonas = new HashSet<>();
+    // secteurActivite
+    @Column(name = "activity_sector")
+    private String activitySector;
 
-// @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval =
-// true)
-// private Set<Document> documents = new HashSet<>();
+    // commissionParitaire
+    @ElementCollection
+    @CollectionTable(name = "company_joint_committees", joinColumns = @JoinColumn(name = "company_id"))
+    @Column(name = "joint_committee")
+    private List<String> jointCommittees;
 
-// @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval =
-// true)
-// private Set<ServiceBilling> billings = new HashSet<>();
+    // categorie
+    private String category;
 
-// @OneToMany(mappedBy = "entity", cascade = CascadeType.ALL, orphanRemoval =
-// true)
-// @JoinColumn(name = "entity_id")
-// @Where(clause = "entity_type = 'COMPANY'")
-// private Set<Address> addresses = new HashSet<>();
+    // calendrierTravail
+    @Column(name = "work_calendar")
+    private String workCalendar;
 
-// @ManyToOne
-// @JoinColumn(name = "secretariat_employee_id")
-// private SecretariatEmployee responsibleEmployee;
+    // dateDebutCollaboration
+    @Column(name = "collaboration_start_date")
+    private LocalDate collaborationStartDate;
 
-// // Helper methods for bidirectional relationships
-// public void addContact(CompanyContact contact) {
-// contacts.add(contact);
-// contact.setCompany(this);
-// }
+    // formuleSouscrite
+    @Column(name = "subscription_formula")
+    private String subscriptionFormula;
 
-// public void removeContact(CompanyContact contact) {
-// contacts.remove(contact);
-// contact.setCompany(null);
-// }
+    // frequenceDeclarationPP
+    @Column(name = "declaration_frequency")
+    private String declarationFrequency;
 
-// public void addWorker(CompanyWorker worker) {
-// workers.add(worker);
-// worker.setCompany(this);
-// }
-
-// public void removeWorker(CompanyWorker worker) {
-// workers.remove(worker);
-// worker.setCompany(null);
-// }
-
-// public void addServiceRequest(ServiceRequest request) {
-// serviceRequests.add(request);
-// request.setCompany(this);
-// }
-
-// public void removeServiceRequest(ServiceRequest request) {
-// serviceRequests.remove(request);
-// request.setCompany(null);
-// }
-
-// public void addDimona(Dimona dimona) {
-// dimonas.add(dimona);
-// dimona.setCompany(this);
-// }
-
-// public void removeDimona(Dimona dimona) {
-// dimonas.remove(dimona);
-// dimona.setCompany(null);
-// }
-
-// public void addDocument(Document document) {
-// documents.add(document);
-// document.setCompany(this);
-// }
-
-// public void removeDocument(Document document) {
-// documents.remove(document);
-// document.setCompany(null);
-// }
-
-// public void addBilling(ServiceBilling billing) {
-// billings.add(billing);
-// billing.setCompany(this);
-// }
-
-// public void removeBilling(ServiceBilling billing) {
-// billings.remove(billing);
-// billing.setCompany(null);
-// }
-// }
+}

@@ -5,15 +5,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.socialsecretariat.espacepartage.model.Company;
 import com.socialsecretariat.espacepartage.model.SecretariatEmployee;
 import com.socialsecretariat.espacepartage.model.SocialSecretariat;
 import com.socialsecretariat.espacepartage.model.User;
+import com.socialsecretariat.espacepartage.repository.CompanyRepository;
 import com.socialsecretariat.espacepartage.repository.SecretariatEmployeeRepository;
 import com.socialsecretariat.espacepartage.repository.SocialSecretariatRepository;
 import com.socialsecretariat.espacepartage.repository.UserRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Configuration
@@ -24,6 +28,7 @@ public class DataInitializer {
             UserRepository userRepository,
             SocialSecretariatRepository socialSecretariatRepository,
             SecretariatEmployeeRepository secretariatEmployeeRepository,
+            CompanyRepository companyRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
             // Create an admin user if none exists
@@ -117,8 +122,8 @@ public class DataInitializer {
                     acertaEmployee.setEmail("jean.dupont@acerta.be");
                     acertaEmployee.setPhoneNumber("+32 2 123 45 68");
                     acertaEmployee.setPassword(passwordEncoder.encode("password"));
-                    acertaEmployee.setPosition("HR Consultant");
-                    acertaEmployee.setSpecialization("Payroll");
+                    acertaEmployee.setPosition("Consultant RH");
+                    acertaEmployee.setSpecialization("Paie");
                     acertaEmployee.setSecretariat(savedAcerta);
                     acertaEmployee.setAccountStatus(User.AccountStatus.ACTIVE);
                     acertaEmployee.setCreatedAt(LocalDateTime.now());
@@ -143,8 +148,8 @@ public class DataInitializer {
                     acertaEmployee2.setEmail("sophie.martin@acerta.be");
                     acertaEmployee2.setPhoneNumber("+32 2 123 45 69");
                     acertaEmployee2.setPassword(passwordEncoder.encode("password"));
-                    acertaEmployee2.setPosition("Legal Advisor");
-                    acertaEmployee2.setSpecialization("Labor Law");
+                    acertaEmployee2.setPosition("Conseiller Juridique");
+                    acertaEmployee2.setSpecialization("Droit du Travail");
                     acertaEmployee2.setSecretariat(savedAcerta);
                     acertaEmployee2.setAccountStatus(User.AccountStatus.ACTIVE);
                     acertaEmployee2.setCreatedAt(LocalDateTime.now());
@@ -166,8 +171,8 @@ public class DataInitializer {
                     securexEmployee.setEmail("marie.dubois@securex.be");
                     securexEmployee.setPhoneNumber("+32 3 765 43 22");
                     securexEmployee.setPassword(passwordEncoder.encode("password"));
-                    securexEmployee.setPosition("Senior Consultant");
-                    securexEmployee.setSpecialization("Social Security");
+                    securexEmployee.setPosition("Consultant Senior");
+                    securexEmployee.setSpecialization("Sécurité Sociale");
                     securexEmployee.setSecretariat(savedSecurex);
                     securexEmployee.setAccountStatus(User.AccountStatus.ACTIVE);
                     securexEmployee.setCreatedAt(LocalDateTime.now());
@@ -181,6 +186,63 @@ public class DataInitializer {
 
                     System.out.println("Securex employee created successfully.");
                 }
+            }
+
+            // Create sample companies if none exist
+            if (companyRepository.count() == 0) {
+                // Create first company
+                Company company1 = new Company();
+                company1.setName("Solutions Informatiques TechCorp");
+                company1.setPhoneNumber("+32 2 555 12 34");
+                company1.setEmail("contact@techcorp.be");
+                company1.setIBAN("BE68 5390 0754 7034");
+                company1.setSecurityFund("123456-78");
+                company1.setWorkAccidentInsurance("ETHIAS-789456");
+                company1.setBceNumber("0123.456.789");
+                company1.setOnssNumber("RSZ123456789");
+                company1.setLegalForm("SPRL");
+                company1.setCompanyName("Solutions Informatiques TechCorp SPRL");
+                company1.setCreationDate(LocalDate.of(2020, 1, 15));
+                company1.setVatNumber("BE0123456789");
+                company1.setWorkRegime("40h/semaine");
+                company1.setSalaryReduction("20%");
+                company1.setActivitySector("Services Informatiques");
+                company1.setJointCommittees(List.of("200", "337"));
+                company1.setCategory("PME");
+                company1.setWorkCalendar("Standard");
+                company1.setCollaborationStartDate(LocalDate.of(2023, 1, 1));
+                company1.setSubscriptionFormula("Premium");
+                company1.setDeclarationFrequency("Mensuelle");
+
+                companyRepository.save(company1);
+                System.out.println("First company created successfully.");
+
+                // Create second company
+                Company company2 = new Company();
+                company2.setName("BelConstruction");
+                company2.setPhoneNumber("+32 2 555 98 76");
+                company2.setEmail("info@belconstruction.be");
+                company2.setIBAN("BE71 3350 0254 9869");
+                company2.setSecurityFund("987654-32");
+                company2.setWorkAccidentInsurance("AG-123789");
+                company2.setBceNumber("9876.543.210");
+                company2.setOnssNumber("RSZ987654321");
+                company2.setLegalForm("SA");
+                company2.setCompanyName("BelConstruction SA");
+                company2.setCreationDate(LocalDate.of(2018, 6, 20));
+                company2.setVatNumber("BE9876543210");
+                company2.setWorkRegime("38h/semaine");
+                company2.setSalaryReduction("15%");
+                company2.setActivitySector("Construction");
+                company2.setJointCommittees(List.of("124", "200"));
+                company2.setCategory("Grande Entreprise");
+                company2.setWorkCalendar("Flexible");
+                company2.setCollaborationStartDate(LocalDate.of(2023, 3, 1));
+                company2.setSubscriptionFormula("Standard");
+                company2.setDeclarationFrequency("Trimestrielle");
+
+                companyRepository.save(company2);
+                System.out.println("Second company created successfully.");
             }
         };
     }
