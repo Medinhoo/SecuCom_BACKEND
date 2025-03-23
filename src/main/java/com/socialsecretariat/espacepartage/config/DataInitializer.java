@@ -5,22 +5,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.socialsecretariat.espacepartage.model.Company;
-import com.socialsecretariat.espacepartage.model.CompanyContact;
-import com.socialsecretariat.espacepartage.model.SecretariatEmployee;
-import com.socialsecretariat.espacepartage.model.SocialSecretariat;
-import com.socialsecretariat.espacepartage.model.User;
-import com.socialsecretariat.espacepartage.repository.CompanyRepository;
-import com.socialsecretariat.espacepartage.repository.CompanyContactRepository;
-import com.socialsecretariat.espacepartage.repository.SecretariatEmployeeRepository;
-import com.socialsecretariat.espacepartage.repository.SocialSecretariatRepository;
-import com.socialsecretariat.espacepartage.repository.UserRepository;
+import com.socialsecretariat.espacepartage.model.*;
+import com.socialsecretariat.espacepartage.repository.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Configuration
 public class DataInitializer {
@@ -32,6 +23,7 @@ public class DataInitializer {
             SecretariatEmployeeRepository secretariatEmployeeRepository,
             CompanyRepository companyRepository,
             CompanyContactRepository companyContactRepository,
+            CollaboratorRepository collaboratorRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
             // Create an admin user if none exists
@@ -319,6 +311,101 @@ public class DataInitializer {
                     companyRepository.save(savedCompany2);
 
                     System.out.println("Third company contact created successfully.");
+                }
+
+                // Créer des collaborateurs exemple si aucun n'existe
+                if (collaboratorRepository.count() == 0) {
+                    // Créer des collaborateurs pour la première entreprise (TechCorp)
+                    Collaborator dev1 = new Collaborator();
+                    dev1.setLastName("Dubois");
+                    dev1.setFirstName("Antoine");
+                    dev1.setNationality("Belge");
+                    dev1.setBirthDate(LocalDate.of(1990, 5, 15));
+                    dev1.setBirthPlace("Bruxelles");
+                    dev1.setGender("M");
+                    dev1.setLanguage("FR");
+                    dev1.setCivilStatus("Célibataire");
+                    dev1.setNationalNumber("90051512345");
+                    dev1.setServiceEntryDate(LocalDate.of(2023, 3, 1));
+                    dev1.setType(Collaborator.CollaboratorType.EMPLOYEE);
+                    dev1.setJobFunction("Développeur Senior");
+                    dev1.setContractType("CDI");
+                    dev1.setWorkRegime("Temps plein");
+                    dev1.setWorkDurationType(Collaborator.WorkDurationType.FIXED);
+
+                    Map<Collaborator.Day, String> schedule = new HashMap<>();
+                    schedule.put(Collaborator.Day.MONDAY, "09:00-17:30");
+                    schedule.put(Collaborator.Day.TUESDAY, "09:00-17:30");
+                    schedule.put(Collaborator.Day.WEDNESDAY, "09:00-17:30");
+                    schedule.put(Collaborator.Day.THURSDAY, "09:00-17:30");
+                    schedule.put(Collaborator.Day.FRIDAY, "09:00-17:00");
+                    dev1.setTypicalSchedule(schedule);
+
+                    dev1.setSalary(new BigDecimal("4500.00"));
+                    dev1.setJointCommittee("200");
+                    dev1.setTaskDescription("Développement full-stack et leadership technique");
+                    dev1.setExtraLegalBenefits(
+                            Arrays.asList("Chèques-repas", "Assurance groupe", "Voiture de société"));
+                    dev1.setIban("BE68 5390 0754 7034");
+
+                    Address homeAddress = new Address();
+                    homeAddress.setStreet("Avenue Louise");
+                    homeAddress.setNumber("123");
+                    homeAddress.setPostalCode("1050");
+                    homeAddress.setCity("Bruxelles");
+                    homeAddress.setCountry("Belgique");
+                    dev1.setAddress(homeAddress);
+
+                    dev1.setCompany(savedCompany1);
+                    dev1.setEstablishmentUnitAddress(homeAddress);
+                    dev1.setCreatedAt(LocalDate.now());
+                    dev1.setUpdatedAt(LocalDate.now());
+
+                    collaboratorRepository.save(dev1);
+                    System.out.println("Premier collaborateur créé avec succès.");
+
+                    // Créer un collaborateur pour la deuxième entreprise (BelConstruction)
+                    Collaborator worker1 = new Collaborator();
+                    worker1.setLastName("Laurent");
+                    worker1.setFirstName("Pierre");
+                    worker1.setNationality("Belge");
+                    worker1.setBirthDate(LocalDate.of(1985, 8, 22));
+                    worker1.setBirthPlace("Liège");
+                    worker1.setGender("M");
+                    worker1.setLanguage("FR");
+                    worker1.setCivilStatus("Marié");
+                    worker1.setCivilStatusDate(LocalDate.of(2015, 6, 12));
+                    worker1.setPartnerName("Marie Laurent");
+                    worker1.setPartnerBirthDate(LocalDate.of(1987, 3, 15));
+                    worker1.setDependents(Arrays.asList("Emma Laurent (2016)", "Lucas Laurent (2018)"));
+                    worker1.setNationalNumber("85082212345");
+                    worker1.setServiceEntryDate(LocalDate.of(2023, 4, 1));
+                    worker1.setType(Collaborator.CollaboratorType.WORKER);
+                    worker1.setJobFunction("Chef de Chantier");
+                    worker1.setContractType("CDI");
+                    worker1.setWorkRegime("Temps plein");
+                    worker1.setWorkDurationType(Collaborator.WorkDurationType.VARIABLE);
+                    worker1.setSalary(new BigDecimal("3800.00"));
+                    worker1.setJointCommittee("124");
+                    worker1.setTaskDescription("Gestion de chantier et coordination d'équipe");
+                    worker1.setExtraLegalBenefits(Arrays.asList("Chèques-repas", "Assurance hospitalisation"));
+                    worker1.setIban("BE71 3350 0254 9869");
+
+                    Address workerAddress = new Address();
+                    workerAddress.setStreet("Rue de la Loi");
+                    workerAddress.setNumber("456");
+                    workerAddress.setPostalCode("4000");
+                    workerAddress.setCity("Liège");
+                    workerAddress.setCountry("Belgique");
+                    worker1.setAddress(workerAddress);
+
+                    worker1.setCompany(savedCompany2);
+                    worker1.setEstablishmentUnitAddress(workerAddress);
+                    worker1.setCreatedAt(LocalDate.now());
+                    worker1.setUpdatedAt(LocalDate.now());
+
+                    collaboratorRepository.save(worker1);
+                    System.out.println("Deuxième collaborateur créé avec succès.");
                 }
             }
         };

@@ -2,7 +2,10 @@ package com.socialsecretariat.espacepartage.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -12,7 +15,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "TCompany")
-@Data
+@Getter
+@Setter
+@ToString(exclude = { "contacts", "collaborators" })
+@EqualsAndHashCode(exclude = { "contacts", "collaborators" })
 @NoArgsConstructor
 @AllArgsConstructor
 public class Company {
@@ -106,6 +112,9 @@ public class Company {
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CompanyContact> contacts = new HashSet<>();
 
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    private Set<Collaborator> collaborators = new HashSet<>();
+
     public void addContact(CompanyContact contact) {
         contacts.add(contact);
         contact.setCompany(this);
@@ -114,5 +123,15 @@ public class Company {
     public void removeContact(CompanyContact contact) {
         contacts.remove(contact);
         contact.setCompany(null);
+    }
+
+    public void addCollaborator(Collaborator collaborator) {
+        collaborators.add(collaborator);
+        collaborator.setCompany(this);
+    }
+
+    public void removeCollaborator(Collaborator collaborator) {
+        collaborators.remove(collaborator);
+        collaborator.setCompany(null);
     }
 }
