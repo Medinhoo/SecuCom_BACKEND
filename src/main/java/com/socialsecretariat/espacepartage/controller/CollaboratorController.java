@@ -1,6 +1,7 @@
 package com.socialsecretariat.espacepartage.controller;
 
 import com.socialsecretariat.espacepartage.dto.CollaboratorDto;
+import com.socialsecretariat.espacepartage.dto.auth.MessageResponse;
 import com.socialsecretariat.espacepartage.service.CollaboratorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,8 +45,8 @@ public class CollaboratorController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCollaborator(@PathVariable UUID id) {
+    public ResponseEntity<MessageResponse> deleteCollaborator(@PathVariable UUID id) {
         collaboratorService.deleteCollaborator(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new MessageResponse("Collaborator deleted successfully"));
     }
 }
