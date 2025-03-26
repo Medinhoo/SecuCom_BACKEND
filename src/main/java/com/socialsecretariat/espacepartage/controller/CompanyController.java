@@ -1,6 +1,7 @@
 package com.socialsecretariat.espacepartage.controller;
 
 import com.socialsecretariat.espacepartage.dto.CompanyDto;
+import com.socialsecretariat.espacepartage.dto.auth.MessageResponse;
 import com.socialsecretariat.espacepartage.service.CompanyService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -89,9 +90,9 @@ public class CompanyController {
      * @return HTTP 204 No Content response
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCompany(@PathVariable UUID id) {
+    public ResponseEntity<MessageResponse> deleteCompany(@PathVariable UUID id) {
         companyService.deleteCompany(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new MessageResponse("Company deleted successfully"));
     }
 
     /**
