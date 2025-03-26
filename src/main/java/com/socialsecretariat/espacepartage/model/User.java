@@ -22,6 +22,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "DTYPE")
+@DiscriminatorValue("User")
 public class User {
 
     @Id

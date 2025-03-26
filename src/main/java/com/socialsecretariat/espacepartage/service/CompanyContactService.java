@@ -165,7 +165,7 @@ public class CompanyContactService {
 
     @Transactional
     public void deleteCompanyContact(UUID id) {
-        CompanyContact contact = companyContactRepository.findById(id)
+        companyContactRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Company contact not found with ID: " + id));
 
         // Delete contact using UserService

@@ -13,6 +13,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true, exclude = { "company" })
 @ToString(callSuper = true, exclude = { "company" })
+@DiscriminatorValue("CompanyContact")
 public class CompanyContact extends User {
 
     private String fonction;
