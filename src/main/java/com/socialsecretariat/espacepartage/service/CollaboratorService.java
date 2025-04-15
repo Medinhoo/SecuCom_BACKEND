@@ -2,8 +2,10 @@ package com.socialsecretariat.espacepartage.service;
 
 import com.socialsecretariat.espacepartage.dto.CollaboratorDto;
 import com.socialsecretariat.espacepartage.model.Collaborator;
+import com.socialsecretariat.espacepartage.model.Dimona;
 import com.socialsecretariat.espacepartage.repository.CollaboratorRepository;
 import com.socialsecretariat.espacepartage.repository.CompanyRepository;
+import com.socialsecretariat.espacepartage.repository.DimonaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class CollaboratorService {
 
     private final CollaboratorRepository collaboratorRepository;
     private final CompanyRepository companyRepository;
+    private final DimonaRepository dimonaRepository;
 
     public CollaboratorDto createCollaborator(CollaboratorDto dto) {
         if (collaboratorRepository.existsByNationalNumber(dto.getNationalNumber())) {
@@ -61,10 +64,19 @@ public class CollaboratorService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void deleteCollaborator(UUID id) {
         if (!collaboratorRepository.existsById(id)) {
             throw new EntityNotFoundException("Collaborator not found");
         }
+        
+        // First delete all associated dimona records
+        List<Dimona> dimonas = dimonaRepository.findByCollaboratorId(id);
+        if (!dimonas.isEmpty()) {
+            dimonaRepository.deleteAll(dimonas);
+        }
+        
+        // Then delete the collaborator
         collaboratorRepository.deleteById(id);
     }
 

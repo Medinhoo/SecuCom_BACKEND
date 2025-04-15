@@ -2,7 +2,10 @@ package com.socialsecretariat.espacepartage.service;
 
 import com.socialsecretariat.espacepartage.dto.CompanyDto;
 import com.socialsecretariat.espacepartage.model.Company;
+import com.socialsecretariat.espacepartage.model.Collaborator;
+import com.socialsecretariat.espacepartage.model.Dimona;
 import com.socialsecretariat.espacepartage.repository.CompanyRepository;
+import com.socialsecretariat.espacepartage.repository.DimonaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -17,9 +20,11 @@ import java.util.stream.Collectors;
 public class CompanyService {
 
     private final CompanyRepository companyRepository;
+    private final DimonaRepository dimonaRepository;
 
-    public CompanyService(CompanyRepository companyRepository) {
+    public CompanyService(CompanyRepository companyRepository, DimonaRepository dimonaRepository) {
         this.companyRepository = companyRepository;
+        this.dimonaRepository = dimonaRepository;
     }
 
     public CompanyDto createCompany(CompanyDto companyDto) {
@@ -61,10 +66,26 @@ public class CompanyService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void deleteCompany(UUID id) {
-        if (!companyRepository.existsById(id)) {
-            throw new EntityNotFoundException("Company not found with id: " + id);
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Company not found with id: " + id));
+        
+        // First, delete all dimona records associated with the company's collaborators
+        for (Collaborator collaborator : company.getCollaborators()) {
+            List<Dimona> dimonas = dimonaRepository.findByCollaboratorId(collaborator.getId());
+            if (!dimonas.isEmpty()) {
+                dimonaRepository.deleteAll(dimonas);
+            }
         }
+        
+        // Also delete dimona records directly associated with the company
+        List<Dimona> companyDimonas = dimonaRepository.findByCompanyId(id);
+        if (!companyDimonas.isEmpty()) {
+            dimonaRepository.deleteAll(companyDimonas);
+        }
+        
+        // Now delete the company (which will cascade delete the collaborators)
         companyRepository.deleteById(id);
     }
 
