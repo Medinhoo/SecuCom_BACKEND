@@ -1,0 +1,649 @@
+\chapter{Développement}
+
+Cette section présente l'implémentation technique de SecuCom, en détaillant l'architecture de l'application, les modèles de données, les contrôleurs et services, ainsi que les fonctionnalités principales et les mécanismes de sécurité.
+
+\section{Architecture de l'application}
+
+\subsection{Vue d'ensemble}
+
+L'implémentation de SecuCom suit une architecture en couches clairement séparées, permettant une meilleure organisation du code, une maintenance facilitée et une évolution plus souple du système. Cette architecture s'articule autour de cinq couches principales :
+
+\begin{itemize}
+  \item \textbf{Couche Modèle} : Représente les entités métier et leurs relations, implémentée via des classes Java annotées avec JPA.
+  \item \textbf{Couche Repository} : Fournit les mécanismes d'accès aux données via Spring Data JPA, permettant d'abstraire les opérations de persistance.
+  \item \textbf{Couche Service} : Contient la logique métier de l'application, orchestrant les opérations entre les repositories et les contrôleurs.
+  \item \textbf{Couche DTO} : Assure la transformation des données entre la couche service et la couche contrôleur, permettant de découpler les modèles internes des représentations externes.
+  \item \textbf{Couche Contrôleur} : Expose les API REST qui permettent aux clients (frontend) d'interagir avec le système.
+\end{itemize}
+
+Cette architecture est complétée par une couche transversale de sécurité qui gère l'authentification et l'autorisation à travers toutes les couches de l'application.
+
+\begin{figure}[h]
+\centering
+% Placeholder for a diagram - you might want to create and include an actual diagram here
+\caption{Architecture en couches de SecuCom}
+\end{figure}
+
+Le flux de données typique dans l'application suit le parcours suivant :
+
+\begin{enumerate}
+  \item Le client (frontend) envoie une requête HTTP à un endpoint REST.
+  \item La requête traverse d'abord la couche de sécurité qui vérifie l'authentification et les autorisations.
+  \item Le contrôleur approprié reçoit la requête, valide les données d'entrée et les transmet au service correspondant.
+  \item Le service applique la logique métier nécessaire et interagit avec les repositories pour accéder aux données.
+  \item Les repositories communiquent avec la base de données via JPA/Hibernate.
+  \item Le résultat remonte la chaîne : repository → service → contrôleur, avec les transformations DTO appropriées.
+  \item Le contrôleur renvoie une réponse HTTP formatée au client.
+\end{enumerate}
+
+Cette séparation des responsabilités permet non seulement une meilleure organisation du code, mais facilite également les tests unitaires et d'intégration, chaque couche pouvant être testée indépendamment.
+
+\subsubsection{Organisation du frontend}
+
+Le frontend de SecuCom est divisé en deux espaces distincts correspondant aux deux principaux rôles d'utilisateurs :
+
+\begin{itemize}
+  \item \textbf{Espace Secrétariat Social} : Accessible aux utilisateurs ayant le rôle \texttt{ROLE\_SECRETARIAT}, cet espace permet la gestion de toutes les entreprises clientes, leurs collaborateurs et leurs déclarations DIMONA.
+  \item \textbf{Espace Entreprise} : Accessible aux utilisateurs ayant le rôle \texttt{ROLE\_COMPANY}, cet espace est limité aux données de l'entreprise à laquelle l'utilisateur est associé.
+\end{itemize}
+
+Cette séparation est implémentée au niveau du routage dans l'application React, avec des routes protégées qui vérifient le rôle de l'utilisateur avant d'autoriser l'accès. Bien que les deux espaces soient distincts en termes de données accessibles, ils partagent la même interface utilisateur (UI) pour maintenir une expérience cohérente. Les composants React sont réutilisés entre les deux espaces, mais les données affichées sont filtrées en fonction du rôle de l'utilisateur.
+
+Par exemple, le même composant de liste de collaborateurs est utilisé dans les deux espaces, mais dans l'espace Secrétariat Social, il peut afficher les collaborateurs de toutes les entreprises (avec possibilité de filtrer par entreprise), tandis que dans l'espace Entreprise, il n'affiche que les collaborateurs de l'entreprise de l'utilisateur connecté.
+
+\subsection{Modèles de données}
+
+Les modèles de données constituent le cœur de l'application SecuCom. Ils représentent les entités métier et leurs relations, et sont implémentés sous forme de classes Java annotées avec JPA (Java Persistence API) pour la persistance en base de données.
+
+\subsubsection{Entité User}
+
+L'entité \texttt{User} représente la base de tous les utilisateurs du système. Elle utilise l'héritage avec une stratégie de table unique (\texttt{SINGLE\_TABLE}) pour différencier les types d'utilisateurs via une colonne discriminante.
+
+\begin{lstlisting}
+@Entity
+@Table(name = "TUser")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "DTYPE")
+@DiscriminatorValue("User")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    private String firstName;
+    private String lastName;
+    private String username;
+    private String email;
+    private String password;
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    private Set<Role> roles = new HashSet<>();
+    
+    // Autres attributs et methodes
+}
+\end{lstlisting}
+
+Cette approche d'héritage permet de spécialiser les utilisateurs en différents types (employés du secrétariat, contacts d'entreprise) tout en maintenant une base commune pour l'authentification et les informations de base.
+
+\subsubsection{Entité Company}
+
+L'entité \texttt{Company} représente une entreprise cliente du secrétariat social. Elle contient de nombreux attributs reflétant les informations administratives et légales nécessaires.
+
+\begin{lstlisting}
+@Entity
+@Table(name = "TCompany")
+public class Company {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    @Column(nullable = false)
+    private String name;
+    
+    @Column(unique = true)
+    private String bceNumber;
+    
+    @Column(unique = true)
+    private String onssNumber;
+    
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    private Set<Collaborator> collaborators = new HashSet<>();
+    
+    // Autres attributs et methodes
+}
+\end{lstlisting}
+
+Cette entité est au centre de nombreuses relations : elle est liée aux contacts d'entreprise, aux collaborateurs et aux déclarations DIMONA.
+
+\subsubsection{Entité Collaborator}
+
+L'entité \texttt{Collaborator} représente un travailleur d'une entreprise cliente. Elle contient des informations personnelles et professionnelles détaillées.
+
+\begin{lstlisting}
+@Entity
+@Table(name = "TCollaborator")
+public class Collaborator {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    private String lastName;
+    private String firstName;
+    private String nationality;
+    private LocalDate birthDate;
+    
+    @Size(max = 20)
+    @Column(name = "national_number", unique = true)
+    private String nationalNumber;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+    
+    // Autres attributs et methodes
+}
+\end{lstlisting}
+
+Cette entité utilise des types énumérés pour certains attributs comme le type de collaborateur (\texttt{EMPLOYEE}, \texttt{WORKER}, etc.) et le type de durée de travail (\texttt{FIXED}, \texttt{VARIABLE}).
+
+\subsubsection{Entité Dimona}
+
+L'entité \texttt{Dimona} représente une déclaration DIMONA associée à un collaborateur et à une entreprise.
+
+\begin{lstlisting}
+@Entity
+@Table(name = "TDimona")
+public class Dimona {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    private String type;
+    private Date entryDate;
+    private Date exitDate;
+    private String status;
+    private String onssReference;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "collaborator_id", nullable = false)
+    private Collaborator collaborator;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+    
+    // Autres attributs et methodes
+}
+\end{lstlisting}
+
+Cette entité permet de suivre l'état des déclarations DIMONA et de conserver les références attribuées par l'ONSS.
+
+\subsubsection{Autres entités et relations}
+
+Le modèle de données comprend également d'autres entités comme \texttt{Address} (utilisée comme classe embarquée dans plusieurs entités), \texttt{SocialSecretariat} (représentant le secrétariat social) et \texttt{SecretariatEmployee} (représentant un employé du secrétariat social).
+
+Les relations entre ces entités sont soigneusement définies pour refléter la réalité métier :
+\begin{itemize}
+  \item Une entreprise peut avoir plusieurs contacts et plusieurs collaborateurs (relations one-to-many).
+  \item Un collaborateur appartient à une seule entreprise (relation many-to-one).
+  \item Une déclaration DIMONA est associée à un collaborateur et à une entreprise (relations many-to-one).
+  \item Un utilisateur peut avoir plusieurs rôles (relation one-to-many avec une collection d'énumérations).
+\end{itemize}
+
+Cette modélisation riche permet de représenter fidèlement les concepts métier tout en facilitant les requêtes et les manipulations de données.
+
+\subsection{Contrôleurs et services}
+
+L'architecture de SecuCom s'appuie sur une séparation claire entre les contrôleurs, qui exposent les API REST, et les services, qui implémentent la logique métier. Cette séparation permet une meilleure organisation du code et facilite les tests.
+
+\subsubsection{Contrôleurs REST}
+
+Les contrôleurs REST sont responsables de la gestion des requêtes HTTP, de la validation des données d'entrée et de la transformation des réponses. Ils sont annotés avec \texttt{@RestController} et définissent des endpoints accessibles via des methodes HTTP (GET, POST, PUT, DELETE).
+
+Voici un exemple avec le contrôleur de gestion des entreprises :
+
+\begin{lstlisting}
+@RestController
+@RequestMapping("/company")
+public class CompanyController {
+    private final CompanyService companyService;
+    
+    public CompanyController(CompanyService companyService) {
+        this.companyService = companyService;
+    }
+    
+    @PostMapping
+    public ResponseEntity<CompanyDto> createCompany(
+            @Valid @RequestBody CompanyDto companyDto) {
+        CompanyDto createdCompany = companyService.createCompany(companyDto);
+        return new ResponseEntity<>(createdCompany, HttpStatus.CREATED);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<CompanyDto> getCompanyById(@PathVariable UUID id) {
+        CompanyDto company = companyService.getCompanyById(id);
+        return ResponseEntity.ok(company);
+    }
+    
+    // Autres methodes
+}
+\end{lstlisting}
+
+Les contrôleurs utilisent des objets DTO (Data Transfer Object) pour les échanges avec les clients, ce qui permet de découpler les modèles internes des représentations externes.
+
+Les principaux contrôleurs de l'application sont :
+\begin{itemize}
+  \item \texttt{AuthController} : Gère l'authentification et les tokens JWT.
+  \item \texttt{CompanyController} : Gère les opérations CRUD sur les entreprises.
+  \item \texttt{CollaboratorController} : Gère les opérations CRUD sur les collaborateurs.
+  \item \texttt{DimonaController} : Gère les opérations liées aux déclarations DIMONA.
+  \item \texttt{UserController} : Gère les opérations sur les utilisateurs.
+  \item \texttt{SocialSecretariatController} : Gère les opérations liées au secrétariat social.
+\end{itemize}
+
+\subsubsection{Services métier}
+
+Les services métier encapsulent la logique fonctionnelle de l'application. Ils orchestrent les opérations entre les repositories et les contrôleurs, appliquent les règles métier et gèrent les transactions.
+
+Voici un exemple simplifié de service pour la gestion des entreprises :
+
+\begin{lstlisting}
+@Service
+@Transactional
+public class CompanyService {
+    private final CompanyRepository companyRepository;
+    private final ModelMapper modelMapper;
+    
+    public CompanyService(CompanyRepository companyRepository, 
+                         ModelMapper modelMapper) {
+        this.companyRepository = companyRepository;
+        this.modelMapper = modelMapper;
+    }
+    
+    public CompanyDto createCompany(CompanyDto companyDto) {
+        // Verification des donnees
+        if (companyRepository.existsByBceNumber(companyDto.getBceNumber())) {
+            throw new RuntimeException("BCE number already exists");
+        }
+        
+        // Conversion DTO -> Entity
+        Company company = modelMapper.map(companyDto, Company.class);
+        
+        // Persistance
+        Company savedCompany = companyRepository.save(company);
+        
+        // Conversion Entity -> DTO pour la reponse
+        return modelMapper.map(savedCompany, CompanyDto.class);
+    }
+    
+    // Autres methodes
+}
+\end{lstlisting}
+
+Les services utilisent l'annotation \texttt{@Transactional} pour gérer les transactions de manière déclarative, assurant l'intégrité des données même en cas d'erreur.
+
+Les principaux services de l'application sont :
+\begin{itemize}
+  \item \texttt{AuthService} : Gère l'authentification et la génération des tokens.
+  \item \texttt{CompanyService} : Implémente la logique métier pour les entreprises.
+  \item \texttt{CollaboratorService} : Implémente la logique métier pour les collaborateurs.
+  \item \texttt{DimonaService} : Implémente la logique métier pour les déclarations DIMONA.
+  \item \texttt{UserService} : Implémente la logique métier pour les utilisateurs.
+  \item \texttt{SocialSecretariatService} : Implémente la logique métier pour le secrétariat social.
+\end{itemize}
+
+\subsubsection{Repositories}
+
+Les repositories fournissent une abstraction de l'accès aux données. Ils sont implémentés en utilisant Spring Data JPA, qui génère automatiquement les implémentations à partir d'interfaces.
+
+\begin{lstlisting}
+public interface CompanyRepository extends JpaRepository<Company, UUID> {
+    boolean existsByBceNumber(String bceNumber);
+    boolean existsByOnssNumber(String onssNumber);
+    boolean existsByVatNumber(String vatNumber);
+    // Autres methodes
+}
+\end{lstlisting}
+
+Cette approche permet de réduire considérablement le code boilerplate tout en offrant des fonctionnalités puissantes comme le filtrage, le tri et la pagination.
+
+\subsubsection{DTOs (Data Transfer Objects)}
+
+Les DTOs sont utilisés pour découpler les modèles internes des représentations externes. Ils permettent de :
+\begin{itemize}
+  \item Contrôler précisément les données exposées aux clients
+  \item Valider les données d'entrée indépendamment des entités
+  \item Adapter le format des données aux besoins spécifiques des clients
+\end{itemize}
+
+\begin{lstlisting}
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CompanyDto {
+    private UUID id;
+    
+    @NotBlank
+    @Size(max = 100)
+    private String name;
+    
+    @Pattern(regexp = "^[0-9]{10}$")
+    private String bceNumber;
+    
+    @Pattern(regexp = "^[0-9]{9}$")
+    private String onssNumber;
+    
+    // Autres attributs
+}
+\end{lstlisting}
+
+La conversion entre DTOs et entités est généralement gérée par des bibliothèques comme ModelMapper ou MapStruct, ou par des methodes de conversion manuelles dans les services.
+
+\section{Fonctionnalités principales}
+
+\subsection{Gestion des entreprises}
+
+La gestion des entreprises est une fonctionnalité centrale de SecuCom, permettant au secrétariat social de gérer efficacement ses clients. Cette fonctionnalité est implémentée à travers plusieurs composants qui travaillent ensemble.
+
+\subsubsection{Modèle de données}
+
+Le modèle de données pour les entreprises est centré autour de l'entité \texttt{Company}, qui stocke toutes les informations nécessaires :
+
+\begin{itemize}
+  \item Informations d'identification : nom, numéro BCE, numéro ONSS, numéro TVA
+  \item Informations de contact : téléphone, email, adresse
+  \item Informations bancaires : IBAN
+  \item Informations légales : forme juridique, secteur d'activité, commissions paritaires
+  \item Informations de collaboration : date de début, formule souscrite, fréquence de déclaration
+\end{itemize}
+
+Cette entité est liée à d'autres entités importantes :
+\begin{itemize}
+  \item \texttt{CompanyContact} : Utilisateurs ayant accès aux données de l'entreprise
+  \item \texttt{Collaborator} : Travailleurs de l'entreprise
+  \item \texttt{Dimona} : Déclarations DIMONA associées à l'entreprise
+\end{itemize}
+
+\subsubsection{API REST}
+
+L'API REST pour la gestion des entreprises est exposée par le \texttt{CompanyController}, qui offre les endpoints suivants :
+
+\begin{itemize}
+  \item \texttt{POST /company} : Création d'une nouvelle entreprise
+  \item \texttt{GET /company/\{id\}} : Récupération des détails d'une entreprise
+  \item \texttt{GET /company} : Récupération de la liste des entreprises
+  \item \texttt{PUT /company/\{id\}} : Mise à jour des informations d'une entreprise
+  \item \texttt{DELETE /company/\{id\}} : Suppression d'une entreprise
+  \item \texttt{GET /company/check/bce/\{bceNumber\}} : Vérification de l'existence d'un numéro BCE
+  \item \texttt{GET /company/check/onss/\{onssNumber\}} : Vérification de l'existence d'un numéro ONSS
+  \item \texttt{GET /company/check/vat/\{vatNumber\}} : Vérification de l'existence d'un numéro TVA
+\end{itemize}
+
+Ces endpoints sont sécurisés et accessibles uniquement aux utilisateurs autorisés (administrateurs et employés du secrétariat social).
+
+\subsubsection{Logique métier}
+
+La logique métier pour la gestion des entreprises est implémentée dans le \texttt{CompanyService}, qui offre les fonctionnalités suivantes :
+
+\begin{itemize}
+  \item Validation des données d'entreprise (unicité des numéros BCE, ONSS et TVA)
+  \item Création et mise à jour des entreprises avec gestion des relations
+  \item Récupération des entreprises avec filtrage et pagination
+  \item Suppression des entreprises avec gestion des dépendances
+\end{itemize}
+
+Le service implémente également des règles métier spécifiques, comme la vérification de la validité des numéros BCE et ONSS selon les formats belges.
+
+\subsubsection{Gestion des contacts d'entreprise}
+
+La gestion des contacts d'entreprise est une fonctionnalité complémentaire qui permet de définir quels utilisateurs ont accès aux données d'une entreprise. Elle est implémentée à travers le \texttt{CompanyContactService} et le \texttt{CompanyContactController}.
+
+Les contacts d'entreprise sont des utilisateurs spécialisés (héritant de \texttt{User}) qui ont le rôle \texttt{ROLE\_COMPANY} et sont associés à une entreprise spécifique. Ils peuvent accéder uniquement aux données de leur propre entreprise.
+
+\subsection{Gestion des collaborateurs}
+
+La gestion des collaborateurs est une autre fonctionnalité clé de SecuCom, permettant de gérer les travailleurs des entreprises clientes (qu'ils soient employés, ouvriers, freelances, stagiaires ou étudiants). Cette fonctionnalité est particulièrement importante car elle sert de base pour les déclarations DIMONA.
+
+\subsubsection{Modèle de données}
+
+Le modèle de données pour les collaborateurs est centré autour de l'entité \texttt{Collaborator}, qui stocke de nombreuses informations :
+
+\begin{itemize}
+  \item Informations personnelles : nom, prénom, nationalité, date de naissance, lieu de naissance, genre, langue, état civil
+  \item Informations d'identification : numéro national (unique)
+  \item Informations professionnelles : date d'entrée en service, fonction, type de contrat, régime de travail
+  \item Informations de rémunération : salaire, avantages extra-légaux
+  \item Informations bancaires : IBAN pour le versement du salaire
+\end{itemize}
+
+L'entité \texttt{Collaborator} utilise plusieurs types énumérés pour catégoriser les collaborateurs :
+\begin{itemize}
+  \item \texttt{CollaboratorType} : EMPLOYEE, WORKER, FREELANCE, INTERN, STUDENT
+  \item \texttt{WorkDurationType} : FIXED, VARIABLE
+  \item \texttt{Day} : MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY (pour les horaires)
+\end{itemize}
+
+Elle utilise également des classes embarquées comme \texttt{Address} pour structurer les informations d'adresse.
+
+\subsubsection{API REST}
+
+L'API REST pour la gestion des collaborateurs est exposée par le \texttt{CollaboratorController}, qui offre les endpoints suivants :
+
+\begin{itemize}
+  \item \texttt{POST /collaborators} : Création d'un nouveau collaborateur
+  \item \texttt{GET /collaborators/\{id\}} : Récupération des détails d'un collaborateur
+  \item \texttt{GET /collaborators} : Récupération de la liste des collaborateurs
+  \item \texttt{GET /collaborators/company/\{companyId\}} : Récupération des collaborateurs d'une entreprise
+  \item \texttt{PUT /collaborators/\{id\}} : Mise à jour des informations d'un collaborateur
+  \item \texttt{DELETE /collaborators/\{id\}} : Suppression d'un collaborateur
+\end{itemize}
+
+Ces endpoints sont sécurisés et accessibles aux utilisateurs autorisés, avec des restrictions basées sur les rôles et les associations d'entreprise.
+
+\subsubsection{Logique métier}
+
+La logique métier pour la gestion des collaborateurs est implémentée dans le \texttt{CollaboratorService}, qui offre les fonctionnalités suivantes :
+
+\begin{itemize}
+  \item Validation des données de collaborateur (unicité du numéro national, validité des dates)
+  \item Création et mise à jour des collaborateurs avec gestion des relations
+  \item Récupération des collaborateurs avec filtrage par entreprise
+  \item Suppression des collaborateurs avec gestion des dépendances (déclarations DIMONA)
+\end{itemize}
+
+Le service implémente également des règles métier spécifiques, comme la vérification de la validité du numéro national selon le format belge et la gestion des horaires de travail selon le type de durée de travail (fixe ou variable).
+
+\subsubsection{Validation des données}
+
+La validation des données de collaborateur est particulièrement importante en raison des exigences légales pour les déclarations DIMONA. Elle est implémentée à plusieurs niveaux :
+
+\begin{itemize}
+  \item Validation des DTOs avec les annotations Jakarta Validation (\texttt{@NotNull}, \texttt{@Size}, \texttt{@Pattern}, etc.)
+  \item Validation métier dans le service (cohérence des dates, validité du numéro national)
+  \item Contraintes de base de données (unicité du numéro national)
+\end{itemize}
+
+Cette approche multi-niveaux garantit l'intégrité et la validité des données de collaborateur, réduisant ainsi les risques d'erreur lors des déclarations officielles.
+
+\subsection{Gestion des déclarations DIMONA}
+
+La gestion des déclarations DIMONA est une fonctionnalité critique de SecuCom, permettant de suivre les déclarations d'emploi auprès de l'ONSS. Cette fonctionnalité est essentielle pour la conformité légale des entreprises clientes.
+
+\subsubsection{Modèle de données}
+
+Le modèle de données pour les déclarations DIMONA est centré autour de l'entité \texttt{Dimona}, qui stocke les informations suivantes :
+
+\begin{itemize}
+  \item Type de déclaration (entrée en service, sortie de service)
+  \item Dates d'entrée et de sortie
+  \item Raison de sortie (si applicable)
+  \item Statut de la déclaration (en attente, acceptée, rejetée)
+  \item Référence ONSS (attribuée par l'ONSS après acceptation)
+  \item Message d'erreur (en cas de rejet)
+\end{itemize}
+
+L'entité \texttt{Dimona} est liée à deux autres entités importantes :
+\begin{itemize}
+  \item \texttt{Collaborator} : Le travailleur concerné par la déclaration
+  \item \texttt{Company} : L'entreprise employeuse
+\end{itemize}
+
+Cette double association permet de retrouver facilement les déclarations par collaborateur ou par entreprise.
+
+\subsubsection{API REST}
+
+L'API REST pour la gestion des déclarations DIMONA est exposée par le \texttt{DimonaController}, qui offre les endpoints suivants :
+
+\begin{itemize}
+  \item \texttt{POST /dimona} : Création d'une nouvelle déclaration DIMONA
+  \item \texttt{GET /dimona/\{id\}} : Récupération des détails d'une déclaration
+  \item \texttt{GET /dimona} : Récupération de la liste des déclarations
+  \item \texttt{GET /dimona/collaborator/\{collaboratorId\}} : Récupération des déclarations d'un collaborateur
+  \item \texttt{GET /dimona/company/\{companyId\}} : Récupération des déclarations d'une entreprise
+  \item \texttt{DELETE /dimona/\{id\}} : Suppression d'une déclaration
+\end{itemize}
+
+Ces endpoints sont sécurisés et accessibles aux utilisateurs autorisés, avec des restrictions basées sur les rôles et les associations d'entreprise.
+
+\subsubsection{Logique métier}
+
+La logique métier pour la gestion des déclarations DIMONA est implémentée dans le \texttt{DimonaService}, qui offre les fonctionnalités suivantes :
+
+\begin{itemize}
+  \item Validation des données de déclaration (cohérence des dates, existence du collaborateur et de l'entreprise)
+  \item Création des déclarations avec initialisation du statut
+  \item Mise à jour du statut des déclarations après traitement par l'ONSS
+  \item Récupération des déclarations avec filtrage par collaborateur ou entreprise
+\end{itemize}
+
+Le service implémente également des règles métier spécifiques, comme la vérification de la cohérence entre les dates d'entrée et de sortie, et la validation des types de déclaration selon le contexte.
+
+\subsubsection{Processus de déclaration}
+
+Le processus de déclaration DIMONA dans SecuCom est semi-automatisé :
+
+\begin{enumerate}
+  \item Un utilisateur (contact d'entreprise ou employé du secrétariat) crée une demande de déclaration DIMONA dans le système.
+  \item Le système valide les données et crée une entrée avec le statut "en attente".
+  \item Un employé du secrétariat social traite la demande en soumettant manuellement la déclaration sur le site officiel de l'ONSS.
+  \item Après traitement par l'ONSS, l'employé met à jour le statut et la référence ONSS dans le système.
+  \item Le système notifie le contact d'entreprise du résultat de la déclaration.
+\end{enumerate}
+
+Cette approche semi-automatisée permet un contrôle humain sur les déclarations tout en bénéficiant de la validation et du suivi automatisés offerts par le système.
+
+\section{Sécurité et authentification}
+
+La sécurité est un aspect fondamental de SecuCom, étant donné la nature sensible des données traitées. L'application implémente un système robuste d'authentification et d'autorisation basé sur les tokens JWT (JSON Web Tokens).
+
+\subsection{Authentification basée sur JWT}
+
+L'authentification dans SecuCom est implémentée en utilisant les tokens JWT, qui offrent plusieurs avantages :
+\begin{itemize}
+  \item Authentification sans état (stateless), facilitant la scalabilité
+  \item Transmission sécurisée des informations d'identité
+  \item Expiration automatique des sessions
+  \item Possibilité de révocation des tokens
+\end{itemize}
+
+Le processus d'authentification se déroule comme suit :
+
+\begin{enumerate}
+  \item L'utilisateur soumet ses identifiants (nom d'utilisateur/email et mot de passe) via l'endpoint \texttt{/auth/login}.
+  \item Le système vérifie les identifiants et, s'ils sont valides, génère deux tokens :
+    \begin{itemize}
+      \item Un token d'accès (access token) de courte durée pour l'authentification
+      \item Un token de rafraîchissement (refresh token) de longue durée pour obtenir de nouveaux tokens d'accès
+    \end{itemize}
+  \item Le token d'accès est renvoyé dans la réponse JSON, tandis que le token de rafraîchissement est stocké dans un cookie HTTP-only sécurisé.
+  \item Pour les requêtes ultérieures, le client inclut le token d'accès dans l'en-tête \texttt{Authorization}.
+  \item Lorsque le token d'accès expire, le client peut obtenir un nouveau token en utilisant le token de rafraîchissement via l'endpoint \texttt{/auth/refresh}.
+\end{enumerate}
+
+Cette implémentation est réalisée à travers plusieurs classes :
+
+\begin{itemize}
+  \item \texttt{JwtUtils} : Génère et valide les tokens JWT
+  \item \texttt{JwtAuthenticationFilter} : Intercepte les requêtes et extrait les tokens JWT
+  \item \texttt{AuthController} : Expose les endpoints d'authentification
+  \item \texttt{AuthService} : Implémente la logique d'authentification
+  \item \texttt{UserDetailsServiceImpl} : Charge les détails utilisateur pour Spring Security
+\end{itemize}
+
+\subsection{Gestion des rôles et autorisations}
+
+SecuCom implémente un système de contrôle d'accès basé sur les rôles (RBAC) en utilisant Spring Security. Trois rôles principaux sont définis :
+
+\begin{itemize}
+  \item \texttt{ROLE\_ADMIN} : Administrateurs du système avec accès complet à toutes les fonctionnalités
+  \item \texttt{ROLE\_SECRETARIAT} : Employés du secrétariat social avec accès à toutes les entreprises clientes et leurs données
+  \item \texttt{ROLE\_COMPANY} : Contacts d'entreprise avec accès limité aux données de leur propre entreprise
+\end{itemize}
+
+Ces rôles sont utilisés à plusieurs niveaux pour sécuriser l'application :
+
+\begin{itemize}
+  \item \textbf{Niveau URL} : Certains endpoints sont restreints à des rôles spécifiques via la configuration de Spring Security dans \texttt{SecurityConfig}.
+  \item \textbf{Niveau méthode} : Des annotations comme \texttt{@PreAuthorize} sont utilisées pour sécuriser des methodes spécifiques dans les contrôleurs et services.
+  \item \textbf{Niveau données} : Des filtres sont appliqués dans les services pour limiter l'accès aux données selon le rôle et l'association d'entreprise de l'utilisateur.
+\end{itemize}
+
+Par exemple, un utilisateur avec le rôle \texttt{ROLE\_COMPANY} ne peut accéder qu'aux données de sa propre entreprise, tandis qu'un utilisateur avec le rôle \texttt{ROLE\_SECRETARIAT} peut accéder aux données de toutes les entreprises.
+
+\subsection{Sécurisation des communications}
+
+Toutes les communications entre le client et le serveur sont sécurisées via HTTPS/TLS, assurant la confidentialité et l'intégrité des données en transit. La configuration CORS (Cross-Origin Resource Sharing) est également mise en place pour contrôler quels domaines peuvent accéder aux ressources de l'API.
+
+\begin{lstlisting}
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(Arrays.asList("*"));
+    configuration.setAllowCredentials(true);
+    configuration.setMaxAge(3600L);
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+}
+\end{lstlisting}
+
+\subsection{Gestion des exceptions de sécurité}
+
+SecuCom implémente une gestion centralisée des exceptions via \texttt{GlobalExceptionHandler}, qui intercepte les exceptions liées à la sécurité et renvoie des réponses appropriées sans exposer de détails sensibles.
+
+\begin{lstlisting}
+@ExceptionHandler(AccessDeniedException.class)
+public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
+    ErrorResponse error = new ErrorResponse(
+            HttpStatus.FORBIDDEN.value(),
+            "Acces refuse",
+            "Vous n'avez pas les permissions necessaires pour acceder a cette ressource");
+    return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+}
+\end{lstlisting}
+
+Cette approche garantit que les erreurs de sécurité sont traitées de manière cohérente et sécurisée, sans révéler d'informations qui pourraient être exploitées par des attaquants.
+
+\subsection{Protection des mots de passe}
+
+Les mots de passe des utilisateurs sont protégés à l'aide de l'algorithme de hachage BCrypt, qui intègre automatiquement un sel (salt) unique pour chaque mot de passe, rendant les attaques par dictionnaire et par table arc-en-ciel (rainbow table) inefficaces.
+
+\begin{lstlisting}
+@Bean
+public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+}
+\end{lstlisting}
+
+Lors de l'authentification, le mot de passe fourni est haché et comparé au hachage stocké, sans jamais manipuler le mot de passe en clair.
+
+\subsection{Audit et traçabilité}
+
+SecuCom intègre des mécanismes d'audit pour tracer les actions importantes des utilisateurs. Les entités principales incluent des champs d'audit comme \texttt{createdAt}, \texttt{updatedAt} et \texttt{lastLogin}, qui sont automatiquement mis à jour grâce à l'annotation \texttt{@EntityListeners(AuditingEntityListener.class)}.
+
+Cette traçabilité permet non seulement de suivre l'historique des modifications, mais aussi de détecter d'éventuelles activités suspectes et de faciliter les investigations en cas d'incident de sécurité.
+
+En résumé, la sécurité de SecuCom est implémentée de manière transversale à travers toutes les couches de l'application, assurant la protection des données sensibles et la conformité avec les exigences légales en matière de protection des données.

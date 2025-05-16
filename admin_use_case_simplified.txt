@@ -1,0 +1,21 @@
+@startuml "Cas d'utilisation - Administrateur"
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecaseBackgroundColor aliceblue
+skinparam usecaseBorderColor blue
+
+actor "Administrateur" as admin
+
+rectangle "Système de SecuCom - Administration" {
+  package "Administration" {
+    usecase "Gérer utilisateurs" as UC33
+    usecase "Gérer rôles et permissions" as UC34
+    usecase "Configurer paramètres système" as UC35
+  }
+}
+
+admin --> UC33
+admin --> UC34
+admin --> UC35
+@enduml

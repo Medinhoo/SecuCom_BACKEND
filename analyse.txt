@@ -1,0 +1,592 @@
+# 6 Analyse
+
+Cette section présente une analyse détaillée de l'architecture et du fonctionnement de SecuCom. À travers différents diagrammes UML, nous allons explorer la structure du système, ses composants, les relations entre les entités, ainsi que les flux d'interactions entre les différents acteurs et le système.
+
+## 6.1 Diagramme de composants
+
+Le diagramme de composants ci-dessous illustre l'architecture globale de SecuCom, mettant en évidence les principaux composants du système et leurs interactions.
+
+```mermaid
+graph TD
+    A[SecuCom] --> B[Module Gestion des Utilisateurs]
+    A --> C[Module Gestion des Entreprises]
+    A --> D[Module Gestion des Collaborateurs]
+    A --> E[Module Gestion des DIMONA]
+    A --> G[Module Sécurité et Authentification]
+    
+    B --> B1[Gestion des profils]
+    B --> B2[Gestion des rôles et permissions]
+    
+    C --> C1[Création et modification d'entreprises]
+    C --> C2[Gestion des contacts d'entreprise]
+    
+    D --> D1[Ajout et modification de collaborateurs]
+    D --> D2[Gestion des informations personnelles]
+    
+    E --> E1[Création de déclarations]
+    E --> E2[Suivi des déclarations]
+    E --> E3[Historique des déclarations]
+    
+    G --> G1[Authentification]
+    G --> G2[Autorisation]
+    G --> G3[Audit et traçabilité]
+    
+    C1 -.-> D1
+    D1 -.-> E1
+```
+
+L'architecture de SecuCom suit un modèle client-serveur classique avec une séparation claire entre le frontend et le backend. Le frontend est développé en ReactJS avec TypeScript, tandis que le backend est basé sur Spring Boot avec une base de données relationnelle.
+
+Le système est organisé en plusieurs couches :
+
+1. **Couche Présentation** : Interface utilisateur React qui communique avec le backend via des appels API REST.
+
+2. **Couche API** : Contrôleurs REST qui exposent les fonctionnalités du système et gèrent les requêtes HTTP.
+
+3. **Couche Service** : Services métier qui implémentent la logique fonctionnelle du système.
+
+4. **Couche Persistance** : Repositories qui gèrent l'accès aux données et la persistance via JPA/Hibernate.
+
+5. **Couche Sécurité** : Composants de sécurité qui gèrent l'authentification et l'autorisation via JWT.
+
+Les principaux composants du système sont :
+
+- **Gestion des Utilisateurs** : Gère les utilisateurs, leurs rôles et leurs permissions.
+- **Gestion des Entreprises** : Gère les entreprises clientes et leurs informations.
+- **Gestion des Collaborateurs** : Gère les travailleurs des entreprises clientes.
+- **Gestion des DIMONA** : Gère les déclarations DIMONA pour les collaborateurs.
+- **Gestion des Documents** : Gère les documents associés aux entreprises et aux collaborateurs.
+- **Sécurité et Authentification** : Gère l'authentification des utilisateurs et la sécurité des accès.
+
+Ces composants interagissent entre eux pour fournir les fonctionnalités complètes du système, tout en maintenant une séparation claire des responsabilités.
+
+## 6.2 Diagramme de classes
+
+Le diagramme de classes ci-dessous représente les principales entités du système SecuCom et leurs relations. Il a été optimisé pour montrer clairement les classes actuellement utilisées dans l'implémentation et leurs relations.
+
+```mermaid
+classDiagram
+    %% Disposition optimisée pour éviter les chevauchements
+    
+    %% Définition des classes
+    class User {
+        -UUID id
+        -String firstName
+        -String lastName
+        -String username
+        -String email
+        -String password
+        -String phoneNumber
+        -Set~Role~ roles
+        -LocalDateTime createdAt
+        -LocalDateTime updatedAt
+        -LocalDateTime lastLogin
+        -AccountStatus accountStatus
+        +addRole(Role) void
+        +hasRole(Role) boolean
+    }
+    
+    class Role {
+        <<enumeration>>
+        ROLE_COMPANY
+        ROLE_SECRETARIAT
+        ROLE_ADMIN
+    }
+    
+    class AccountStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+        LOCKED
+        PENDING
+    }
+    
+    class SocialSecretariat {
+        -UUID id
+        -String name
+        -String bceNumber
+        -Set~SecretariatEmployee~ employees
+        +addEmployee(SecretariatEmployee) void
+        +removeEmployee(SecretariatEmployee) void
+    }
+    
+    class SecretariatEmployee {
+        -UUID id
+        -String position
+        -String specialization
+        -SocialSecretariat secretariat
+    }
+    
+    class Company {
+        -UUID id
+        -String name
+        -String phoneNumber
+        -String email
+        -String bceNumber
+        -String onssNumber
+        -String legalForm
+        -String vatNumber
+        -String activitySector
+        -String IBAN
+        -String securityFund
+        -String workAccidentInsurance
+        -String companyName
+        -LocalDate creationDate
+        -String workRegime
+        -List~String~ jointCommittees
+        -Set~CompanyContact~ contacts
+        -Set~Collaborator~ collaborators
+        +addContact(CompanyContact) void
+        +removeContact(CompanyContact) void
+        +addCollaborator(Collaborator) void
+        +removeCollaborator(Collaborator) void
+    }
+    
+    class CompanyContact {
+        -UUID id
+        -String position
+        -Company company
+        -Set~Permission~ permissions
+    }
+    
+    class Collaborator {
+        -UUID id
+        -String firstName
+        -String lastName
+        -String nationalNumber
+        -String nationality
+        -LocalDate birthDate
+        -String birthPlace
+        -String gender
+        -String language
+        -String civilStatus
+        -CollaboratorType type
+        -String jobFunction
+        -String contractType
+        -String workRegime
+        -WorkDurationType workDurationType
+        -BigDecimal salary
+        -String jointCommittee
+        -String iban
+        -Company company
+        -Address address
+        -Address establishmentUnitAddress
+    }
+    
+    class CollaboratorType {
+        <<enumeration>>
+        EMPLOYEE
+        WORKER
+        FREELANCE
+        INTERN
+        STUDENT
+    }
+    
+    class WorkDurationType {
+        <<enumeration>>
+        FIXED
+        VARIABLE
+    }
+    
+    class Dimona {
+        -UUID id
+        -String type
+        -Date entryDate
+        -Date exitDate
+        -String exitReason
+        -String status
+        -String onssReference
+        -String errorMessage
+        -Collaborator collaborator
+        -Company company
+    }
+    
+    class Address {
+        -String street
+        -String number
+        -String box
+        -String postalCode
+        -String city
+        -String country
+    }
+    
+    %% Relations d'héritage
+    User <|-- SecretariatEmployee
+    User <|-- CompanyContact
+    
+    %% Relations d'association - Groupe 1
+    User "*" -- "*" Role : has
+    User "1" -- "1" AccountStatus : has
+    
+    %% Relations d'association - Groupe 2
+    SocialSecretariat "1" *-- "*" SecretariatEmployee : employs
+    SocialSecretariat "1" --> "0..1" Address : located at
+    
+    %% Relations d'association - Groupe 3
+    Company "1" *-- "*" CompanyContact : has
+    Company "1" *-- "*" Collaborator : employs
+    Company "1" --> "0..1" Address : located at
+    
+    %% Relations d'association - Groupe 4
+    Collaborator "1" --> "1" Address : has
+    Collaborator "1" --> "1" Address : establishment
+    Collaborator "1" --> "1" CollaboratorType : is of type
+    Collaborator "1" --> "1" WorkDurationType : has
+    
+    %% Relations d'association - Groupe 5
+    Company "1" o-- "*" Dimona : declares
+    Collaborator "1" o-- "*" Dimona : associated with
+```
+
+Ce diagramme montre les relations d'héritage (User est la classe parente de SecretariatEmployee et CompanyContact) ainsi que les relations d'association entre les différentes entités. Les principales classes du système sont :
+
+- **User** : Classe de base pour tous les utilisateurs du système, avec des attributs comme id, email, password, firstName, lastName, etc. Elle est associée à des rôles (Role) et à un statut de compte (AccountStatus).
+
+- **Role** : Énumération définissant les différents rôles disponibles dans le système (ROLE_COMPANY, ROLE_SECRETARIAT, ROLE_ADMIN).
+
+- **AccountStatus** : Énumération définissant les différents états possibles d'un compte utilisateur (ACTIVE, INACTIVE, LOCKED, PENDING).
+
+- **SocialSecretariat** : Représente le secrétariat social avec ses informations et ses employés. Il peut avoir plusieurs employés (SecretariatEmployee) et est associé à une adresse (Address).
+
+- **SecretariatEmployee** : Employé du secrétariat social, hérite de User et est associé à un secrétariat social (SocialSecretariat).
+
+- **Company** : Entreprise cliente avec ses informations d'identification et ses contacts. Elle peut avoir plusieurs contacts (CompanyContact), plusieurs collaborateurs (Collaborator) et plusieurs déclarations DIMONA (Dimona). Elle est également associée à une adresse (Address).
+
+- **CompanyContact** : Contact au sein d'une entreprise cliente, hérite de User et est associé à une entreprise (Company).
+
+- **Collaborator** : Travailleur d'une entreprise cliente avec ses informations personnelles et professionnelles. Il est associé à une entreprise (Company), à une adresse personnelle (Address), à une adresse d'établissement (Address), à un type de collaborateur (CollaboratorType) et à un type de durée de travail (WorkDurationType). Il peut avoir plusieurs déclarations DIMONA (Dimona).
+
+- **CollaboratorType** : Énumération définissant les différents types de collaborateurs (EMPLOYEE, WORKER, FREELANCE, INTERN, STUDENT).
+
+- **WorkDurationType** : Énumération définissant les différents types de durée de travail (FIXED, VARIABLE).
+
+- **Dimona** : Déclaration DIMONA associée à un collaborateur (Collaborator) et à une entreprise (Company).
+
+- **Address** : Adresse physique utilisée par plusieurs entités (Collaborator, Company, SocialSecretariat).
+
+Les relations entre ces classes sont clairement définies avec des multiplicités appropriées (one-to-many, many-to-many, etc.) et des noms de relations explicites pour faciliter la compréhension du modèle.
+
+## 6.3 Diagramme d'entités relationnelles
+
+Le diagramme d'entités relationnelles (ERD) ci-dessous représente la structure de la base de données de SecuCom. Il montre les tables, leurs attributs et les relations entre elles.
+
+```mermaid
+erDiagram
+    TUSER {
+        UUID id PK
+        string firstName
+        string lastName
+        string username
+        string email
+        string password
+        string phoneNumber
+        string DTYPE
+        datetime createdAt
+        datetime updatedAt
+        datetime lastLogin
+        string accountStatus
+        string position
+        string specialization
+        UUID secretariat_id FK
+        string fonction
+        string permissions
+        UUID company_id FK
+    }
+    
+    USER_ROLES {
+        UUID user_id FK
+        string roles
+    }
+    
+    TSOCIAL_SECRETARIAT {
+        UUID id PK
+        string name
+        string companyNumber
+        string address
+        string phone
+        string email
+        string website
+    }
+    
+    TCOMPANY {
+        UUID id PK
+        string name
+        string phoneNumber
+        string email
+        string IBAN
+        string securityFund
+        string workAccidentInsurance
+        string bceNumber
+        string onssNumber
+        string legalForm
+        string companyName
+        date creationDate
+        string vatNumber
+        string workRegime
+        string salaryReduction
+        string activitySector
+        string category
+        string workCalendar
+        date collaborationStartDate
+        string subscriptionFormula
+        string declarationFrequency
+    }
+    
+    COMPANY_JOINT_COMMITTEES {
+        UUID company_id FK
+        string joint_committee
+    }
+    
+    TCOLLABORATOR {
+        UUID id PK
+        string lastName
+        string firstName
+        string nationality
+        date birthDate
+        string birthPlace
+        string gender
+        string language
+        string civilStatus
+        date civilStatusDate
+        string partnerName
+        date partnerBirthDate
+        string nationalNumber
+        date serviceEntryDate
+        int type
+        string jobFunction
+        string contractType
+        string workRegime
+        int workDurationType
+        decimal salary
+        string jointCommittee
+        string taskDescription
+        string iban
+        UUID company_id FK
+        date createdAt
+        date updatedAt
+        string address_street
+        string address_number
+        string address_box
+        string address_postal_code
+        string address_city
+        string address_country
+        string establishment_street
+        string establishment_number
+        string establishment_box
+        string establishment_postal_code
+        string establishment_city
+        string establishment_country
+    }
+    
+    COLLABORATOR_DEPENDENTS {
+        UUID collaborator_id FK
+        string dependents
+    }
+    
+    COLLABORATOR_EXTRA_LEGAL_BENEFITS {
+        UUID collaborator_id FK
+        string extra_legal_benefits
+    }
+    
+    COLLABORATOR_SCHEDULE {
+        UUID collaborator_id FK
+        string day
+        string schedule
+    }
+    
+    TDIMONA {
+        UUID id PK
+        string type
+        date entryDate
+        date exitDate
+        string exitReason
+        string status
+        string onssReference
+        string errorMessage
+        UUID collaborator_id FK
+        UUID company_id FK
+    }
+    
+    TUSER ||--o{ USER_ROLES : ""
+    TUSER }o--|| TSOCIAL_SECRETARIAT : ""
+    TUSER }o--|| TCOMPANY : ""
+    
+    TCOMPANY ||--o{ COMPANY_JOINT_COMMITTEES : ""
+    TCOMPANY ||--o{ TCOLLABORATOR : ""
+    TCOMPANY ||--o{ TDIMONA : ""
+    
+    TCOLLABORATOR ||--o{ COLLABORATOR_DEPENDENTS : ""
+    TCOLLABORATOR ||--o{ COLLABORATOR_EXTRA_LEGAL_BENEFITS : ""
+    TCOLLABORATOR ||--o{ COLLABORATOR_SCHEDULE : ""
+    TCOLLABORATOR ||--o{ TDIMONA : ""
+```
+
+Les principales entités de la base de données sont :
+
+- **TUSER** : Stocke les informations de base des utilisateurs (identifiant, email, mot de passe, nom, prénom, etc.). Cette table utilise l'héritage par une colonne discriminante (DTYPE) pour distinguer les différents types d'utilisateurs.
+
+- **USER_ROLES** : Table de jointure qui associe les utilisateurs à leurs rôles.
+
+- **TSOCIAL_SECRETARIAT** : Stocke les informations des secrétariats sociaux (nom, numéro d'entreprise, adresse, téléphone, email, site web).
+
+- **TCOMPANY** : Stocke les informations des entreprises clientes (nom, téléphone, email, IBAN, numéro BCE, numéro ONSS, forme juridique, etc.).
+
+- **COMPANY_JOINT_COMMITTEES** : Stocke les commissions paritaires associées aux entreprises.
+
+- **TCOLLABORATOR** : Stocke les informations des travailleurs des entreprises clientes (nom, prénom, nationalité, date de naissance, lieu de naissance, genre, langue, état civil, numéro national, fonction, type de contrat, régime de travail, salaire, etc.).
+
+- **COLLABORATOR_DEPENDENTS** : Stocke les personnes à charge des collaborateurs.
+
+- **COLLABORATOR_EXTRA_LEGAL_BENEFITS** : Stocke les avantages extra-légaux des collaborateurs.
+
+- **COLLABORATOR_SCHEDULE** : Stocke les horaires de travail des collaborateurs.
+
+- **TDIMONA** : Stocke les informations des déclarations DIMONA (type, date d'entrée, date de sortie, raison de sortie, statut, référence ONSS, message d'erreur, etc.).
+
+Les relations entre ces entités sont les suivantes :
+
+- Un utilisateur peut avoir plusieurs rôles (relation one-to-many entre TUSER et USER_ROLES).
+- Un utilisateur peut être associé à un secrétariat social (relation many-to-one entre TUSER et TSOCIAL_SECRETARIAT).
+- Un utilisateur peut être associé à une entreprise (relation many-to-one entre TUSER et TCOMPANY).
+- Une entreprise peut avoir plusieurs commissions paritaires (relation one-to-many entre TCOMPANY et COMPANY_JOINT_COMMITTEES).
+- Une entreprise peut avoir plusieurs collaborateurs (relation one-to-many entre TCOMPANY et TCOLLABORATOR).
+- Une entreprise peut avoir plusieurs déclarations DIMONA (relation one-to-many entre TCOMPANY et TDIMONA).
+- Un collaborateur peut avoir plusieurs personnes à charge (relation one-to-many entre TCOLLABORATOR et COLLABORATOR_DEPENDENTS).
+- Un collaborateur peut avoir plusieurs avantages extra-légaux (relation one-to-many entre TCOLLABORATOR et COLLABORATOR_EXTRA_LEGAL_BENEFITS).
+- Un collaborateur peut avoir plusieurs horaires de travail (relation one-to-many entre TCOLLABORATOR et COLLABORATOR_SCHEDULE).
+- Un collaborateur peut avoir plusieurs déclarations DIMONA (relation one-to-many entre TCOLLABORATOR et TDIMONA).
+
+**Champs obligatoires (NOT NULL):**
+- USER: firstName, lastName, username, email, password, roles, createdAt, accountStatus
+- SOCIAL_SECRETARIAT: name, companyNumber
+- COMPANY: name
+- COLLABORATOR: lastName, firstName, serviceEntryDate, company_id, createdAt
+- DIMONA: collaborator_id, company_id
+
+**Contraintes d'unicité (UNIQUE):**
+- USER: username, email
+- COMPANY: bceNumber, onssNumber, vatNumber
+- COLLABORATOR: nationalNumber
+
+**Types énumérés:**
+- USER.accountStatus: ACTIVE (défaut), INACTIVE, LOCKED, PENDING
+- COLLABORATOR.type: EMPLOYEE, WORKER, FREELANCE, INTERN, STUDENT
+- COLLABORATOR.workDurationType: FIXED, VARIABLE
+
+Ce modèle de données permet de représenter efficacement les relations complexes entre les différentes entités du système, tout en assurant l'intégrité des données et la performance des requêtes.
+
+## 6.4 Diagrammes de séquences
+
+Les diagrammes de séquence ci-dessous illustrent les interactions entre les différents composants du système pour les cas d'utilisation clés.
+
+### 6.4.1 Cas d'utilisation : Création d'une entreprise
+
+Le diagramme de séquence suivant illustre le processus de création d'une nouvelle entreprise dans le système.
+
+```mermaid
+sequenceDiagram
+    actor User as Utilisateur (Employé du secrétariat)
+    participant UI as Interface Utilisateur
+    participant CC as CompanyController
+    participant CS as CompanyService
+    participant CR as CompanyRepository
+    participant DB as Base de Données
+
+    User->>UI: Remplit le formulaire de création d'entreprise
+    UI->>CC: POST /api/companies (CompanyDto)
+    CC->>CS: createCompany(CompanyDto)
+    
+    CS->>CS: Valide les données (BCE, ONSS, TVA)
+    CS->>CR: existsByBceNumber(bceNumber)
+    CR->>DB: SELECT * FROM companies WHERE bce_number = ?
+    DB->>CR: Résultat
+    CR->>CS: boolean (existe ou non)
+    
+    alt L'entreprise existe déjà
+        CS->>CC: Lance une exception
+        CC->>UI: Retourne erreur 400 (Bad Request)
+        UI->>User: Affiche message d'erreur
+    else L'entreprise n'existe pas
+        CS->>CS: Convertit DTO en entité
+        CS->>CR: save(Company)
+        CR->>DB: INSERT INTO companies
+        DB->>CR: ID généré
+        CR->>CS: Company sauvegardée
+        CS->>CS: Convertit entité en DTO
+        CS->>CC: CompanyDto
+        CC->>UI: Retourne 201 (Created) avec CompanyDto
+        UI->>User: Affiche confirmation et détails
+    end
+```
+
+Ce diagramme montre les étapes suivantes :
+1. L'utilisateur (un employé du secrétariat social) remplit le formulaire de création d'entreprise.
+2. L'interface utilisateur envoie une requête POST au contrôleur d'entreprise.
+3. Le contrôleur délègue la création au service d'entreprise.
+4. Le service vérifie si l'entreprise existe déjà (par son numéro BCE).
+5. Si l'entreprise existe, une erreur est retournée.
+6. Si l'entreprise n'existe pas, elle est créée dans la base de données.
+7. Les détails de l'entreprise créée sont retournés à l'utilisateur.
+
+### 6.4.2 Cas d'utilisation : Ajout d'un employé
+
+Le diagramme de séquence pour l'ajout d'un employé (collaborateur) à une entreprise illustre les interactions entre l'utilisateur, l'interface, les contrôleurs, les services et la base de données pour créer un nouveau collaborateur dans le système.
+
+Le processus commence lorsqu'un utilisateur (généralement un contact d'entreprise ou un employé du secrétariat) remplit le formulaire d'ajout d'employé. Les données sont validées, l'existence de l'entreprise est vérifiée, puis le collaborateur est créé et associé à l'entreprise. Enfin, les détails du collaborateur créé sont retournés à l'utilisateur.
+
+### 6.4.3 Cas d'utilisation : Création d'une déclaration DIMONA
+
+Le diagramme de séquence pour la création d'une déclaration DIMONA illustre le processus de déclaration d'un collaborateur auprès de l'ONSS.
+
+Ce processus implique la validation des données du collaborateur et de l'entreprise, la création de la déclaration DIMONA dans le système, puis l'envoi (simulé) de cette déclaration à l'ONSS. Une fois la déclaration traitée, son statut est mis à jour et les détails sont retournés à l'utilisateur.
+
+## 6.5 Diagramme d'activité
+
+Le diagramme d'activité ci-dessous illustre le flux de travail typique pour la gestion d'un collaborateur dans le système SecuCom, depuis sa création jusqu'à la génération de sa fiche de paie.
+
+```mermaid
+stateDiagram-v2
+    [*] --> CreationEntreprise
+    CreationEntreprise --> AjoutContact: Entreprise créée
+    AjoutContact --> AjoutCollaborateur: Contact ajouté
+    
+    AjoutCollaborateur --> CreationDIMONA: Collaborateur ajouté
+    CreationDIMONA --> SuiviDIMONA: DIMONA créée
+    
+    state SuiviDIMONA {
+        [*] --> EnAttente
+        EnAttente --> Acceptee: Confirmation ONSS
+        EnAttente --> Rejetee: Erreur détectée
+        Rejetee --> Corrigee: Correction effectuée
+        Corrigee --> EnAttente: Nouvelle soumission
+    }
+    
+    SuiviDIMONA --> EnregistrementPrestations: DIMONA acceptée
+    EnregistrementPrestations --> GenerationFichePaie: Prestations validées
+    GenerationFichePaie --> [*]: Fiche de paie générée
+    
+    state fork_state <<fork>>
+    GenerationFichePaie --> fork_state
+    fork_state --> ArchivageDocuments
+    fork_state --> EnvoiDocuments
+    
+    ArchivageDocuments --> [*]
+    EnvoiDocuments --> [*]
+```
+
+Ce flux de travail comprend plusieurs étapes :
+1. Création de l'entreprise cliente
+2. Ajout d'un contact pour l'entreprise
+3. Ajout d'un collaborateur à l'entreprise
+4. Création d'une déclaration DIMONA pour le collaborateur
+5. Suivi du statut de la déclaration DIMONA, qui peut être :
+   - En attente
+   - Acceptée
+   - Rejetée (nécessitant une correction et une nouvelle soumission)
+6. Enregistrement des prestations du collaborateur
+7. Génération de la fiche de paie
+8. Archivage et envoi des documents
+
+Chaque étape du flux peut être réalisée par différents acteurs (employé du secrétariat, contact d'entreprise) selon leurs permissions dans le système. Le flux n'est pas strictement linéaire et peut comporter des boucles ou des branches conditionnelles selon les besoins spécifiques de chaque cas.
+
+Ce diagramme d'activité permet de visualiser clairement le processus métier global et d'identifier les points d'interaction entre les différents acteurs et le système.

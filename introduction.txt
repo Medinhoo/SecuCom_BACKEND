@@ -1,0 +1,44 @@
+# 1 Introduction
+
+À l'heure où la digitalisation des processus administratifs devient incontournable pour les entreprises, les secrétariats sociaux font face à des défis croissants en matière de gestion des données et de communication avec leurs clients. En Belgique, la complexité des réglementations sociales et la nécessité d'un traitement rapide et fiable des déclarations d'emploi (DIMONA) exigent des solutions informatiques adaptées et performantes. Pourtant, de nombreux secrétariats sociaux indépendants continuent de fonctionner avec des processus manuels, générant inefficacités, erreurs et perte de temps considérable.
+
+## 1.1 Objectifs du TFE
+
+Ce Travail de Fin d'Études, présenté à l'ISFCE dans le cadre de l'obtention du diplôme de Bachelier en informatique à orientation développement d'applications, a pour objectif de concevoir, développer et valider une plateforme de gestion pour secrétariats sociaux, baptisée SecuCom. Cette solution est spécifiquement adaptée aux besoins de Sodabel, un secrétariat social indépendant avec lequel une collaboration étroite a été établie.
+
+Plus précisément, ce TFE vise à :
+- Analyser les processus internes de Sodabel concernant la gestion des entreprises clientes, de leurs employés et des déclarations DIMONA
+- Concevoir une architecture backend robuste et sécurisée répondant aux besoins spécifiques identifiés
+- Implémenter les fonctionnalités clés permettant de fluidifier les processus d'encodage et de gestion
+- Valider la solution à travers des tests fonctionnels et de sécurité
+- Fournir un premier jet d'une solution qui pourra être développée davantage dans un cadre professionnel futur
+
+L'ambition de ce projet dépasse le simple cadre académique : il s'agit de proposer une solution réellement opérationnelle qui pourra être déployée et améliorée progressivement pour répondre aux besoins concrets d'un secrétariat social en activité.
+
+## 1.2 Méthodologie
+
+Pour atteindre ces objectifs, ce travail s'articule en quatre étapes principales :
+
+- **Analyse des besoins** : Plusieurs entretiens ont été menés avec les responsables de Sodabel, tant en présentiel qu'à distance, afin d'identifier précisément les points de friction dans les processus actuels. Cette phase a permis de comprendre les flux de travail existants (principalement basés sur WhatsApp et email) et leurs limitations.
+
+- **Conception** : À partir des besoins identifiés, des spécifications fonctionnelles et techniques ont été élaborées, accompagnées d'une modélisation UML complète. Les choix technologiques ont été effectués en tenant compte des contraintes spécifiques du projet et des compétences disponibles.
+
+- **Implémentation** : Le développement du backend a été réalisé en suivant les bonnes pratiques de développement, avec une attention particulière portée à la sécurité des données sensibles et à la séparation des espaces privés entre le secrétariat social et ses clients.
+
+- **Validation** : Des tests ont été mis en place pour vérifier le bon fonctionnement des fonctionnalités développées et s'assurer que la solution répond effectivement aux problématiques identifiées lors de la phase d'analyse.
+
+## 1.3 Structure du document
+
+Le corps de ce TFE s'articule autour de plusieurs sections qui suivent la progression logique du projet :
+
+La section **Contexte** présente l'environnement des secrétariats sociaux en Belgique, avec un focus particulier sur Sodabel et ses problématiques actuelles : processus manuels chronophages, communication dispersée entre WhatsApp et emails, et risques d'erreurs élevés.
+
+La section **Description du sujet** expose en détail SecuCom, ses objectifs et son mode de fonctionnement, en mettant l'accent sur sa simplicité d'utilisation et son interface intuitive, conçues spécifiquement pour répondre aux besoins identifiés.
+
+L'**Analyse de l'existant** confronte notre proposition aux solutions existantes comme EasyPay ou Liantis, en soulignant comment SecuCom se distingue par son approche minimaliste et ciblée, contrairement aux solutions plus complexes et coûteuses du marché.
+
+Les sections **Exigences et besoins** et **Analyse** présentent respectivement les besoins métier, techniques et de sécurité, puis traduisent ces exigences en une analyse précise à l'aide de diagrammes UML.
+
+Les parties **Conception** et **Développement** abordent les choix architecturaux et décrivent l'implémentation des principales fonctionnalités : création d'entreprises, gestion des employés et traitement des déclarations DIMONA.
+
+Enfin, les sections **Aspects financiers** et **Conclusion** proposent une évaluation économique et une synthèse qui ouvre sur les perspectives d'évolution de la solution, notamment dans le cadre d'une collaboration professionnelle future.

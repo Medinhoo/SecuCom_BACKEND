@@ -1,0 +1,55 @@
+# 2 Contexte
+
+## 2.1 Description du secrétariat social
+
+Sodabel est une Société à Responsabilité Limitée (SRL) créée le 29 juillet 2020, située Avenue Frans van Kalken 9 à Anderlecht (1070). Cette jeune entreprise, identifiée sous le numéro BE 0751.606.280, est spécialisée dans les activités de service de bureau et de soutien administratif, avec un focus particulier sur les services de secrétariat social.
+
+Malgré sa taille modeste (classée comme micro-entreprise avec 0 équivalent temps plein déclaré), Sodabel offre une gamme complète de services essentiels aux entreprises et indépendants. Ses principales activités comprennent la génération de documents administratifs et sociaux tels que les contrats de travail, les formulaires C4 (documents de fin de contrat), et les fiches de paie. Cette offre de services est complétée par une collaboration étroite avec Fiscobel, une autre entreprise appartenant au même gérant, qui fournit des services comptables complémentaires, créant ainsi un écosystème de support administratif complet pour les clients.
+
+La clientèle de Sodabel est principalement composée d'indépendants et de petites entreprises issues de secteurs variés, avec une forte représentation dans les domaines du transport (taxis), de la restauration et de la construction. Cette spécialisation dans l'accompagnement des petites structures entrepreneuriales répond à un besoin spécifique du marché belge, où les démarches administratives liées à l'emploi peuvent représenter un défi considérable pour les entrepreneurs qui se concentrent sur leur cœur de métier.
+
+## 2.2 Problématique et besoins
+
+Malgré son expertise dans le domaine du secrétariat social, Sodabel fait face à plusieurs défis opérationnels liés à ses processus actuels, majoritairement manuels. L'absence d'un système informatique dédié engendre des inefficacités et des risques qui impactent tant la qualité du service que la satisfaction client.
+
+Le principal problème identifié concerne la saisie manuelle des données lors de la déclaration des collaborateurs. Ce processus, qu'il soit réalisé en personne au secrétariat ou à distance via des communications par email ou WhatsApp, est particulièrement sujet aux erreurs. Une simple faute de frappe ou une mauvaise interprétation des informations transmises peut avoir des conséquences significatives. En effet, les erreurs dans les déclarations peuvent entraîner des complications légales et administratives tant pour le collaborateur déclaré que pour l'entreprise cliente, pouvant aller jusqu'à des sanctions de la part des organismes de sécurité sociale.
+
+La communication fragmentée entre Sodabel et ses clients constitue un autre point de friction majeur. L'utilisation de canaux multiples et non structurés (visites en personne, emails, messages WhatsApp) pour la transmission d'informations critiques crée un environnement propice aux malentendus et aux oublis. L'absence d'un canal unique et formalisé pour la collecte des données nécessaires aux différentes déclarations sociales complexifie le suivi et augmente le risque d'erreurs.
+
+Enfin, l'absence d'un système de suivi en temps réel des déclarations DIMONA représente une limitation importante. Actuellement, Sodabel ne dispose d'aucun mécanisme proactif pour monitorer le statut des déclarations soumises à l'Office National de Sécurité Sociale (ONSS). Le suivi se fait manuellement ou en réaction aux alertes émises par l'ONSS, ce qui peut retarder la détection et la résolution des problèmes potentiels.
+
+Ces différentes problématiques soulignent un besoin clair de digitalisation et d'automatisation des processus au sein de Sodabel, afin de réduire les risques d'erreurs, d'améliorer l'efficacité opérationnelle et d'offrir un meilleur service à ses clients.
+
+## 2.3 Processus métier
+
+Pour mieux comprendre les enjeux et les opportunités d'amélioration, il est essentiel d'examiner en détail les principaux processus métier actuellement en place chez Sodabel.
+
+### Processus de création d'une entreprise cliente
+
+Lorsqu'une nouvelle entreprise souhaite devenir cliente de Sodabel, le processus actuel est entièrement manuel. L'entreprise doit se présenter physiquement au secrétariat social ou envoyer les informations requises par email ou WhatsApp. Une secrétaire de Sodabel collecte alors manuellement toutes les données nécessaires : informations d'identification de l'entreprise, coordonnées du responsable, secteur d'activité, nombre d'employés prévus, etc. Ces informations sont ensuite saisies dans des fichiers ou des formulaires papier, sans système centralisé permettant un accès facile et sécurisé à ces données.
+
+Ce processus présente plusieurs limitations :
+- Risque élevé d'erreurs lors de la transcription des données
+- Temps de traitement important
+- Difficulté à retrouver et à mettre à jour les informations
+- Absence de validation automatique des données saisies
+
+### Processus d'ajout d'un collaborateur
+
+L'ajout d'un nouveau collaborateur pour une entreprise cliente suit un schéma similaire. L'entreprise communique les informations du collaborateur soit en personne, soit par voie électronique (email, WhatsApp). Une secrétaire de Sodabel doit alors saisir manuellement ces données pour préparer les documents nécessaires et effectuer les déclarations obligatoires.
+
+Ce processus est particulièrement critique car les erreurs à ce niveau peuvent avoir des conséquences légales importantes. Une erreur dans la saisie du numéro de registre national, de la date de début de contrat ou du type de contrat peut entraîner des problèmes administratifs significatifs tant pour l'employeur que pour l'employé.
+
+### Processus de déclaration DIMONA
+
+La Déclaration Immédiate/Onmiddellijke Aangifte (DIMONA) est une obligation légale en Belgique qui consiste à déclarer immédiatement tout engagement ou fin de relation de travail auprès de l'ONSS. Chez Sodabel, ce processus est actuellement géré de manière réactive.
+
+Lorsqu'une entreprise cliente souhaite déclarer un nouveau collaborateur, elle fournit les informations nécessaires à Sodabel. Une secrétaire saisit alors ces informations dans le système de l'ONSS pour effectuer la déclaration DIMONA. Cependant, il n'existe aucun système interne permettant de suivre en temps réel le statut de ces déclarations. Le suivi se fait manuellement, en vérifiant périodiquement les confirmations reçues de l'ONSS, ou en réaction aux alertes émises par cet organisme en cas de problème.
+
+Cette approche présente plusieurs inconvénients :
+- Absence de visibilité en temps réel sur le statut des déclarations
+- Détection tardive des erreurs ou des problèmes
+- Difficulté à fournir des informations actualisées aux clients
+- Risque accru de non-conformité avec les obligations légales
+
+L'ensemble de ces processus métier, bien que fonctionnels, présente des inefficacités et des risques qui justifient pleinement le développement d'une solution informatique dédiée comme SecuCom. Cette plateforme vise à digitaliser et à automatiser ces processus, réduisant ainsi les risques d'erreurs tout en améliorant l'efficacité opérationnelle et la qualité du service offert par Sodabel à ses clients.

@@ -1,0 +1,71 @@
+Table des matières
+
+1  Introduction
+   1.1  Objectifs du TFE
+   1.2  Méthodologie
+   1.3  Structure du document
+
+2  Contexte
+   2.1  Description du secrétariat social
+   2.2  Problématique et besoins
+   2.3  Processus métier
+
+3  Description du sujet
+   3.1  Qu'est-ce que SecuCom ?
+   3.2  À qui est destiné SecuCom ?
+
+4  Analyse de l'existant
+   4.1  Démarche d'analyse de l'existant
+   4.2  Analyse comparée des solutions
+      4.2.1  Solution 1
+      4.2.2  Solution 2
+   4.3  SecuCom face à l'existant
+
+5  Exigences et besoins
+   5.1  Diagramme de cas d'utilisation
+   5.2  Exigences et besoins techniques, de sécurité et de performance
+      5.2.1  Besoins techniques
+      5.2.2  Besoins de sécurité
+      5.2.3  Besoins de performance
+
+6  Analyse
+   6.1  Diagramme de composants
+   6.2  Diagramme de classes
+   6.3  Diagramme d'entités relationnelles
+   6.4  Diagrammes de séquences
+      6.4.1  Cas d'utilisation : Création d'une entreprise
+      6.4.2  Cas d'utilisation : Ajout d'un employé
+      6.4.3  Cas d'utilisation : Création d'une déclaration DIMONA
+   6.5  Diagramme d'activité
+
+7  Conception
+   7.2  Technologies front-end (si applicable)
+   7.3  Technologies back-end
+   7.4  Pourquoi ces choix ?
+
+8  Développement
+   8.1  Architecture de l'application
+      8.1.1  Vue d'ensemble
+      8.1.2  Modèles de données
+      8.1.3  Contrôleurs et services
+   8.2  Fonctionnalités principales
+      8.2.1  Gestion des entreprises
+      8.2.2  Gestion des employés
+      8.2.3  Gestion des déclarations DIMONA
+   8.3  Sécurité et authentification
+   8.4  Tests
+
+9  Aspects financiers
+   9.1  Coûts de développement
+   9.2  Bénéfices attendus
+
+10 Conclusion
+   10.1  Difficultés rencontrées
+   10.2  Bilan
+   10.3  Améliorations futures
+
+Bibliographie
+
+Glossaire
+
+Annexes

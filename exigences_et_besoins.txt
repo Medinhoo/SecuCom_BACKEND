@@ -1,0 +1,95 @@
+# 5 Exigences et besoins
+
+## 5.1 Diagramme de cas d'utilisation
+
+Les diagrammes de cas d'utilisation illustrent les principales fonctionnalités de SecuCom selon les différents types d'utilisateurs du système.
+
+Le premier diagramme présente les fonctionnalités accessibles à l'administrateur du système, qui peut gérer les utilisateurs, les rôles et permissions, ainsi que les paramètres système. Ces fonctionnalités sont essentielles pour maintenir la sécurité et la configuration globale de la plateforme.
+
+Le deuxième diagramme illustre les fonctionnalités accessibles aux contacts des entreprises clientes. Ils peuvent gérer les informations de leur entreprise, leurs travailleurs, créer et suivre des demandes DIMONA, gérer des documents et consulter les informations relatives à la paie et à la facturation.
+
+Le troisième diagramme présente les fonctionnalités accessibles aux employés du secrétariat social. Ils disposent d'un accès étendu pour gérer les entreprises clientes, leurs travailleurs, traiter les demandes DIMONA, gérer les documents et les prestations, ainsi que les aspects liés à la paie et à la facturation. Le système intervient également pour certaines actions automatisées comme la réception des confirmations DIMONA et les notifications.
+
+## 5.2 Exigences et besoins techniques, de sécurité et de performance
+
+### 5.2.1 Besoins techniques
+
+L'architecture technique de SecuCom a été conçue pour répondre aux exigences spécifiques d'un secrétariat social tout en garantissant évolutivité, maintenabilité et robustesse. Les choix technologiques suivants ont été retenus :
+
+**Architecture globale** :
+- Architecture client-serveur avec séparation claire entre frontend et backend
+- API RESTful pour la communication entre les différentes couches
+- Déploiement sur serveur dédié ou cloud selon les besoins
+
+**Frontend** :
+- Framework ReactJS avec TypeScript pour une meilleure maintenabilité et détection d'erreurs
+- Interface responsive pour différentes tailles d'écran desktop (pas d'optimisation mobile)
+- État global géré via Redux ou Context API
+
+**Backend** :
+- Framework Spring Boot pour le développement d'applications Java
+- Spring Security pour la gestion de l'authentification et des autorisations
+- Spring Data JPA pour l'accès aux données et la persistance
+- Hibernate comme ORM (Object-Relational Mapping)
+- Base de données relationnelle pour le stockage des données structurées
+
+**Modèle de données** :
+Basé sur l'implémentation actuelle, le modèle de données comprend les entités suivantes :
+- User : utilisateur du système avec authentification
+- SocialSecretariat : entité représentant le secrétariat social
+- SecretariatEmployee : employé du secrétariat social
+- Company : entreprise cliente
+- CompanyContact : contact au sein de l'entreprise cliente
+- Collaborator : travailleur/employé d'une entreprise cliente
+- Dimona : déclaration DIMONA associée à un collaborateur
+- Address : adresse physique (utilisée par plusieurs entités)
+
+**Environnement de développement** :
+- Gestion de version avec Git
+- Build automatisé avec Maven
+
+### 5.2.2 Besoins de sécurité
+
+La sécurité est un aspect fondamental de SecuCom, étant donné la nature sensible des données traitées. Les exigences de sécurité suivantes ont été implémentées :
+
+**Authentification et autorisation** :
+- Authentification sécurisée basée sur JWT (JSON Web Tokens) comme implémenté dans JwtAuthenticationFilter et JwtUtils
+- Gestion des rôles et permissions via Spring Security
+- Séparation stricte des espaces de données entre les différentes entreprises clientes
+- Validation des permissions à chaque requête API
+
+**Protection des données** :
+- Transmission sécurisée via HTTPS/TLS
+- Gestion des exceptions avec GlobalExceptionHandler pour éviter la fuite d'informations sensibles
+- Conformité au RGPD (Règlement Général sur la Protection des Données)
+
+**Sécurité applicative** :
+- Protection contre les attaques courantes (XSS, CSRF, injection SQL) via Spring Security
+- Validation des entrées côté serveur avec les DTOs
+- Gestion sécurisée des mots de passe (hachage avec sel)
+- Mécanisme de rafraîchissement de token (RefreshTokenRequest)
+
+### 5.2.3 Besoins de performance
+
+Bien qu'aucune restriction spécifique n'ait été définie en termes de performance, SecuCom doit offrir une expérience utilisateur fluide et réactive pour garantir son adoption par les utilisateurs. Les exigences suivantes ont été établies :
+
+**Temps de réponse** :
+- Chargement initial de l'application < 3 secondes
+- Temps de réponse des requêtes API < 1 seconde pour les opérations courantes
+- Affichage des listes et tableaux optimisé
+
+**Capacité et évolutivité** :
+- Support simultané d'un nombre suffisant d'utilisateurs pour les besoins de Sodabel
+- Capacité à gérer la croissance du nombre d'entreprises clientes et de collaborateurs
+- Architecture permettant l'évolutivité en cas de besoin
+
+**Disponibilité** :
+- Disponibilité du service adaptée aux heures de travail du secrétariat social
+- Temps de récupération après incident raisonnable
+- Maintenance planifiée en dehors des heures de bureau
+
+**Optimisation** :
+- Requêtes SQL optimisées pour les opérations courantes via Spring Data JPA
+- Structure de base de données efficace avec les index appropriés
+
+Ces exigences techniques, de sécurité et de performance constituent le cadre dans lequel SecuCom a été développé, garantissant une solution robuste, sécurisée et performante qui répond aux besoins spécifiques de Sodabel et potentiellement d'autres secrétariats sociaux de taille similaire.
