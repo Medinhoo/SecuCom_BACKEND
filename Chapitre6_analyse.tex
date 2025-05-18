@@ -1,76 +1,97 @@
 \chapter{Analyse}
 
-Cette section présente une analyse détaillée de l'architecture et du fonctionnement de SecuCom. À travers différents diagrammes UML, nous allons explorer la structure du système, ses composants, les relations entre les entités, ainsi que les flux d'interactions entre les différents acteurs et le système.
+\noindent Cette section présente une analyse détaillée de l'architecture et du fonctionnement de \textbf{SecuCom}. À travers différents diagrammes UML, nous allons explorer la structure du système, ses composants, les relations entre les entités, ainsi que les flux d'interactions entre les différents acteurs et le système.
 
 \section{Diagramme de composants}
 
-Le diagramme de composants ci-dessous illustre l'architecture modulaire de SecuCom, mettant en évidence les principaux modules du système, leurs sous-composants et leurs interactions.
+\noindent Le diagramme de composants ci-dessous illustre l'architecture modulaire de \textbf{SecuCom}, mettant en évidence les principaux modules du système, leurs sous-composants et leurs interactions.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{ComposantsDiagram.png}
 \caption{Diagramme de composants de SecuCom}
 \end{figure}
 
-Le système SecuCom est structuré autour de cinq modules principaux, chacun responsable d'un aspect spécifique de la plateforme :
+\vspace{0.5cm}
 
-\begin{itemize}
-  \item \textbf{Module Gestion des Utilisateurs} : Ce module se divise en deux sous-composants :
-    \begin{itemize}
+\noindent Le système \textbf{SecuCom} est structuré autour de cinq modules principaux, chacun responsable d'un aspect spécifique de la plateforme :
+
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item \textbf{Module Gestion des Utilisateurs} : Comprend quatre sous-composants critiques :
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+      \item \textit{Authentification} : Gère la vérification des identités des utilisateurs.
+      \item \textit{Audit et traçabilité} : Enregistre les actions des utilisateurs pour des fins de sécurité.
       \item \textit{Gestion des profils} : Permet la création, modification et suppression des profils utilisateurs.
       \item \textit{Gestion des rôles et permissions} : Définit et gère les droits d'accès aux différentes fonctionnalités.
     \end{itemize}
   
   \item \textbf{Module Gestion des Entreprises} : Comprend deux sous-composants essentiels :
-    \begin{itemize}
-      \item \textit{Création et modification d'entreprises} : Gère le cycle de vie des entités entreprises.
-      \item \textit{Gestion des contacts d'entreprise} : Administre les utilisateurs associés à chaque entreprise.
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+      \item \textit{Gestion CRUD d'entreprises} : Gère le cycle de vie complet des entités entreprises (création, lecture, mise à jour, suppression).
+      \item \textit{Gestion CRUD des contacts d'entreprise} : Administre les utilisateurs associés à chaque entreprise.
     \end{itemize}
   
   \item \textbf{Module Gestion des Collaborateurs} : Se compose de deux sous-composants :
-    \begin{itemize}
-      \item \textit{Ajout et modification de collaborateurs} : Gère les travailleurs associés aux entreprises.
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+      \item \textit{Gestion CRUD des collaborateurs} : Gère les travailleurs associés aux entreprises.
       \item \textit{Gestion des informations personnelles} : Administre les données personnelles des collaborateurs.
     \end{itemize}
   
-  \item \textbf{Module Gestion des DIMONA} : Divisé en trois sous-composants :
-    \begin{itemize}
-      \item \textit{Création de déclarations} : Permet l'initiation des déclarations DIMONA.
-      \item \textit{Suivi des déclarations} : Offre une visibilité sur l'état des déclarations en cours.
-      \item \textit{Historique des déclarations} : Archive et permet la consultation des déclarations passées.
+  \item \textbf{Module Gestion des DIMONA} : Divisé en deux sous-composants :
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+      \item \textit{Gestion CRUD de déclarations} : Permet l'initiation, la consultation, la modification et la suppression des déclarations DIMONA.
+      \item \textit{Gestion des statuts des déclarations} : Offre une visibilité sur l'état des déclarations en cours.
     \end{itemize}
-  
-  \item \textbf{Module Sécurité et Authentification} : Comprend trois sous-composants critiques :
-    \begin{itemize}
-      \item \textit{Authentification} : Gère la vérification des identités des utilisateurs.
-      \item \textit{Autorisation} : Contrôle les accès aux ressources selon les rôles.
-      \item \textit{Audit et traçabilité} : Enregistre les actions des utilisateurs pour des fins de sécurité.
+    
+  \item \textbf{Module Gestion des Notifications} : Comprend deux sous-composants :
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+      \item \textit{Gestion des notifications} : Gère l'envoi et le traitement des notifications.
+      \item \textit{Historique des notifications} : Conserve un historique des notifications envoyées pour référence et suivi.
     \end{itemize}
 \end{itemize}
 
-Le diagramme met également en évidence des relations de dépendance importantes entre certains sous-composants :
-\begin{itemize}
-  \item La création d'entreprises (\textit{Création et modification d'entreprises}) est liée à l'ajout de collaborateurs (\textit{Ajout et modification de collaborateurs}), illustrant le flux de travail où une entreprise doit exister avant de pouvoir y associer des collaborateurs.
-  \item De même, l'ajout de collaborateurs est lié à la création de déclarations DIMONA, reflétant la nécessité d'avoir un collaborateur enregistré avant de pouvoir effectuer une déclaration le concernant.
+\vspace{0.5cm}
+
+\noindent Le diagramme met également en évidence des relations de dépendance importantes entre certains sous-composants :
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item La gestion d'entreprises (\textit{Gestion CRUD d'entreprises}) est liée à la gestion des collaborateurs (\textit{Gestion CRUD des collaborateurs}), illustrant le flux de travail où une entreprise doit exister avant de pouvoir y associer des collaborateurs.
+  \item De même, la gestion des collaborateurs est liée à la gestion des déclarations DIMONA, reflétant la nécessité d'avoir un collaborateur enregistré avant de pouvoir effectuer une déclaration le concernant.
+  \item La gestion des statuts des déclarations (\textit{Gestion des statuts des déclarations}) est liée à la gestion des notifications (\textit{Gestion des notifications}), permettant d'envoyer des notifications automatiques lorsqu'une déclaration DIMONA est créée ou change de statut.
+  \item La gestion des collaborateurs (\textit{Gestion CRUD des collaborateurs}) est également liée à la gestion des notifications (\textit{Gestion des notifications}), permettant d'envoyer des notifications automatiques lorsqu'un nouveau collaborateur est créé.
 \end{itemize}
 
+\vspace{0.5cm}
+
+\begin{tcolorbox}[
+  title={\textbf{Architecture modulaire de SecuCom}},
+  colback=blue!5!white,
+  colframe=primarycolor,
+  fonttitle=\bfseries,
+  boxrule=0.5mm,
+  arc=2mm,
+  left=6mm,
+  right=6mm,
+  top=6mm,
+  bottom=6mm
+]
 Cette architecture modulaire facilite la maintenance et l'évolution du système, chaque module pouvant être développé, testé et mis à jour de manière relativement indépendante, tout en préservant les interactions nécessaires entre les différentes fonctionnalités.
-
-Sur le plan technique, SecuCom est implémenté selon une architecture client-serveur avec une séparation claire entre le frontend (développé en ReactJS avec TypeScript) et le backend (basé sur Spring Boot avec une base de données relationnelle).
+\end{tcolorbox}
 
 \section{Diagramme de classes}
 
-Le diagramme de classes ci-dessous représente les principales entités du système SecuCom et leurs relations. Il a été optimisé pour montrer clairement les classes actuellement utilisées dans l'implémentation et leurs relations.
+\noindent Le diagramme de classes ci-dessous représente les principales entités du système \textbf{SecuCom} et leurs relations. Il a été optimisé pour montrer clairement les classes actuellement utilisées dans l'implémentation et leurs relations.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{ClassDiagram.png}
 \caption{Diagramme de classes de SecuCom}
 \end{figure}
 
-Les principales classes du système sont :
+\vspace{0.5cm}
 
-\begin{itemize}
+\noindent Les principales classes du système sont :
+
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
   \item \textbf{User} : Classe de base pour tous les utilisateurs du système, avec des attributs comme id, email, password, firstName, lastName, etc. Elle est associée à des rôles (Role) et à un statut de compte (AccountStatus).
 
   \item \textbf{Role} : Énumération définissant les différents rôles disponibles dans le système (ROLE\_COMPANY, ROLE\_SECRETARIAT, ROLE\_ADMIN).
@@ -94,23 +115,31 @@ Les principales classes du système sont :
   \item \textbf{Dimona} : Déclaration DIMONA associée à un collaborateur (Collaborator) et à une entreprise (Company).
 
   \item \textbf{Address} : Adresse physique utilisée par plusieurs entités (Collaborator, Company, SocialSecretariat).
+  
+  \item \textbf{Notification} : Représente une notification envoyée à un utilisateur, avec des attributs comme id, message, type, read (lu/non lu), createdAt, recipient (destinataire) et entityId (référence à l'entité concernée).
+  
+  \item \textbf{NotificationType} : Énumération définissant les différents types de notifications (DIMONA\_CREATED, DIMONA\_STATUS\_CHANGED, COLLABORATOR\_CREATED).
 \end{itemize}
 
 Les relations entre ces classes sont clairement définies avec des multiplicités appropriées (one-to-many, many-to-many, etc.) et des noms de relations explicites pour faciliter la compréhension du modèle.
 
+\newpage
+
 \section{Diagramme d'entités relationnelles}
 
-Le diagramme d'entités relationnelles (ERD) ci-dessous représente la structure de la base de données de SecuCom. Il montre les tables, leurs attributs et les relations entre elles.
+\noindent Le diagramme d'entités relationnelles (ERD) ci-dessous représente la structure de la base de données de \textbf{SecuCom}. Il montre les tables, leurs attributs et les relations entre elles.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{ERD.png}
 \caption{Diagramme d'entités relationnelles de SecuCom}
 \end{figure}
 
-Les principales entités de la base de données sont :
+\vspace{0.5cm}
 
-\begin{itemize}
+\noindent Les principales entités de la base de données sont :
+
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
   \item \textbf{TUSER} : Stocke les informations de base des utilisateurs (identifiant, email, mot de passe, nom, prénom, etc.). Cette table utilise l'héritage par une colonne discriminante (DTYPE) pour distinguer les différents types d'utilisateurs.
 
   \item \textbf{USER\_ROLES} : Table de jointure qui associe les utilisateurs à leurs rôles.
@@ -130,11 +159,15 @@ Les principales entités de la base de données sont :
   \item \textbf{COLLABORATOR\_SCHEDULE} : Stocke les horaires de travail des collaborateurs.
 
   \item \textbf{TDIMONA} : Stocke les informations des déclarations DIMONA (type, date d'entrée, date de sortie, raison de sortie, statut, référence ONSS, message d'erreur, etc.).
+  
+  \item \textbf{TNOTIFICATION} : Stocke les notifications envoyées aux utilisateurs (message, type, statut de lecture, date de création, destinataire, référence à l'entité concernée).
 \end{itemize}
 
-Les relations entre ces entités sont les suivantes :
+\vspace{0.5cm}
 
-\begin{itemize}
+\noindent Les relations entre ces entités sont les suivantes :
+
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
   \item Un utilisateur peut avoir plusieurs rôles (relation one-to-many entre TUSER et USER\_ROLES).
   \item Un utilisateur peut être associé à un secrétariat social (relation many-to-one entre TUSER et TSOCIAL\_SECRETARIAT).
   \item Un utilisateur peut être associé à une entreprise (relation many-to-one entre TUSER et TCOMPANY).
@@ -145,10 +178,13 @@ Les relations entre ces entités sont les suivantes :
   \item Un collaborateur peut avoir plusieurs avantages extra-légaux (relation one-to-many entre TCOLLABORATOR et COLLABORATOR\_EXTRA\_LEGAL\_BENEFITS).
   \item Un collaborateur peut avoir plusieurs horaires de travail (relation one-to-many entre TCOLLABORATOR et COLLABORATOR\_SCHEDULE).
   \item Un collaborateur peut avoir plusieurs déclarations DIMONA (relation one-to-many entre TCOLLABORATOR et TDIMONA).
+  \item Un utilisateur peut recevoir plusieurs notifications (relation one-to-many entre TUSER et TNOTIFICATION).
 \end{itemize}
 
+\vspace{0.5cm}
+
 \textbf{Champs obligatoires (NOT NULL):}
-\begin{itemize}
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
   \item USER: firstName, lastName, username, email, password, roles, createdAt, accountStatus
   \item SOCIAL\_SECRETARIAT: name, companyNumber
   \item COMPANY: name
@@ -156,35 +192,72 @@ Les relations entre ces entités sont les suivantes :
   \item DIMONA: collaborator\_id, company\_id
 \end{itemize}
 
+\vspace{0.5cm}
+
 \textbf{Contraintes d'unicité (UNIQUE):}
-\begin{itemize}
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
   \item USER: username, email
   \item COMPANY: bceNumber, onssNumber, vatNumber
   \item COLLABORATOR: nationalNumber
 \end{itemize}
 
+\vspace{0.5cm}
+
 \textbf{Types énumérés:}
-\begin{itemize}
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
   \item USER.accountStatus: ACTIVE (défaut), INACTIVE, LOCKED, PENDING
   \item COLLABORATOR.type: EMPLOYEE, WORKER, FREELANCE, INTERN, STUDENT
   \item COLLABORATOR.workDurationType: FIXED, VARIABLE
+  \item NOTIFICATION.type: DIMONA\_CREATED, DIMONA\_STATUS\_CHANGED, COLLABORATOR\_CREATED
 \end{itemize}
 
-Ce modèle de données permet de représenter efficacement les relations complexes entre les différentes entités du système, tout en assurant l'intégrité des données et la performance des requêtes.
+\vspace{0.5cm}
+
+\textbf{Suppression en cascade:}
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item La suppression d'une entreprise entraîne la suppression de tous ses contacts, collaborateurs et déclarations DIMONA associés.
+  \item La suppression d'un collaborateur entraîne la suppression de toutes ses personnes à charge, avantages extra-légaux, horaires de travail et déclarations DIMONA associés.
+  \item La suppression d'un utilisateur entraîne la suppression de toutes ses notifications associées.
+\end{itemize}
+
+\vspace{0.5cm}
+
+\begin{tcolorbox}[
+  title={\textbf{Modèle de données robuste}},
+  colback=blue!5!white,
+  colframe=primarycolor,
+  fonttitle=\bfseries,
+  boxrule=0.5mm,
+  arc=2mm,
+  left=6mm,
+  right=6mm,
+  top=6mm,
+  bottom=6mm
+]
+Ce modèle de données permet de représenter efficacement les relations complexes entre les différentes entités du système, tout en assurant l'intégrité des données et la performance des requêtes. La structure relationnelle facilite la gestion des associations entre entreprises, collaborateurs et déclarations DIMONA, tout en maintenant une séparation claire des responsabilités. Les mécanismes de suppression en cascade garantissent la cohérence des données en évitant les références orphelines.
+\end{tcolorbox}
+
+\newpage
 
 \section{Diagrammes de séquences}
 
-Les diagrammes de séquence ci-dessous illustrent les interactions entre les différents composants du système pour les cas d'utilisation clés.
+\noindent Les diagrammes de séquence ci-dessous illustrent les interactions entre les différents composants du système \textbf{SecuCom} pour les cas d'utilisation clés. Ces diagrammes permettent de visualiser clairement les flux de communication entre les acteurs et le système.
+
+\begin{note}
+Les diagrammes de séquence sont particulièrement utiles pour comprendre la dynamique temporelle des interactions et identifier les points de communication critiques entre les différentes parties du système.
+\end{note}
 
 \subsection{Cas d'utilisation : Création d'une entreprise}
 
-Le diagramme de séquence ci-dessous illustre le processus de création d'une entreprise dans le système SecuCom. Ce processus implique trois acteurs principaux : l'Administrateur, le Contact Entreprise et l'Employé du Secrétariat Social.
+\noindent Le diagramme de séquence ci-dessous illustre le processus de création d'une entreprise dans le système \textbf{SecuCom}. Ce processus implique trois acteurs principaux : l'Administrateur, le Contact Entreprise et l'Employé du Secrétariat Social.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{SD_creation_entreprise.png}
 \caption{Diagramme de séquence - Création d'une entreprise}
 \end{figure}
+
+\vspace{0.5cm}
 
 \subsubsection{Description du processus}
 
@@ -236,13 +309,15 @@ Ce processus constitue la première étape dans le cycle de vie d'une entreprise
 
 \subsection{Cas d'utilisation : Ajout d'un collaborateur}
 
-Le diagramme de séquence ci-dessous illustre le processus d'ajout d'un collaborateur (employé) dans le système SecuCom. Ce processus implique plusieurs composants du système et inclut des validations importantes pour garantir l'intégrité des données.
+\noindent Le diagramme de séquence ci-dessous illustre le processus d'ajout d'un collaborateur (employé) dans le système \textbf{SecuCom}. Ce processus implique plusieurs composants du système et inclut des validations importantes pour garantir l'intégrité des données.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{SD_creation_collaborateur.png}
 \caption{Diagramme de séquence - Ajout d'un collaborateur}
 \end{figure}
+
+\vspace{0.5cm}
 
 \subsubsection{Description du processus}
 
@@ -281,13 +356,15 @@ L'ajout d'un collaborateur est une étape cruciale qui permet ensuite de procéd
 
 \subsection{Cas d'utilisation : Création d'une déclaration DIMONA}
 
-Le diagramme de séquence ci-dessous illustre le processus de création d'une déclaration DIMONA dans le système SecuCom. Ce processus peut être initié soit par le Contact Entreprise, soit par le Secrétariat Social, et implique une validation manuelle des données avant la soumission à l'ONSS.
+\noindent Le diagramme de séquence ci-dessous illustre le processus de création d'une déclaration DIMONA dans le système \textbf{SecuCom}. Ce processus peut être initié soit par le Contact Entreprise, soit par le Secrétariat Social, et implique une validation manuelle des données avant la soumission à l'ONSS.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{SD_creation_dimona.png}
 \caption{Diagramme de séquence - Création d'une déclaration DIMONA}
 \end{figure}
+
+\vspace{0.5cm}
 
 \subsubsection{Description du processus}
 
@@ -330,9 +407,9 @@ Le diagramme de séquence ci-dessous illustre le processus de création d'une d�
 
 \subsubsection{Aspects importants du processus}
 
-Ce processus met en évidence plusieurs aspects importants du système SecuCom :
+\noindent Ce processus met en évidence plusieurs aspects importants du système \textbf{SecuCom} :
 
-\begin{itemize}
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
   \item \textbf{Double flux d'initiation} : La flexibilité du système permet à deux types d'acteurs différents d'initier le processus selon les besoins et les préférences.
   \item \textbf{Gestion des refus et corrections} : Le système permet de gérer les cas où la DIMONA est refusée par l'ONSS, avec un mécanisme de notification et de correction.
   \item \textbf{Communication bidirectionnelle} : Le système sert d'intermédiaire pour la communication entre le Contact Entreprise et le Secrétariat Social.
@@ -340,7 +417,22 @@ Ce processus met en évidence plusieurs aspects importants du système SecuCom :
   \item \textbf{Traçabilité} : Le système maintient un suivi du statut des déclarations DIMONA, permettant aux parties concernées de connaître l'état actuel de chaque déclaration.
 \end{itemize}
 
-La création d'une déclaration DIMONA représente l'aboutissement du processus de gestion des collaborateurs, permettant de déclarer officiellement leur engagement auprès des autorités compétentes.
+\vspace{0.5cm}
+
+\begin{tcolorbox}[
+  title={\textbf{Importance des déclarations DIMONA}},
+  colback=blue!5!white,
+  colframe=primarycolor,
+  fonttitle=\bfseries,
+  boxrule=0.5mm,
+  arc=2mm,
+  left=6mm,
+  right=6mm,
+  top=6mm,
+  bottom=6mm
+]
+La création d'une déclaration DIMONA représente l'aboutissement du processus de gestion des collaborateurs, permettant de déclarer officiellement leur engagement auprès des autorités compétentes. Ce processus est crucial car il assure la conformité légale de l'entreprise et protège les droits des travailleurs en matière de sécurité sociale.
+\end{tcolorbox}
 
 % \section{Diagramme d'activité}
 

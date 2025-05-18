@@ -8,30 +8,35 @@ graph TD
     A --> C[Module Gestion des Entreprises]
     A --> D[Module Gestion des Collaborateurs]
     A --> E[Module Gestion des DIMONA]
-    A --> G[Module Sécurité et Authentification]
+    A --> F[Module Gestion des Notifications]
     
+    B --> B3[Authentification]
+    B --> B4[Audit et traçabilité]
     B --> B1[Gestion des profils]
     B --> B2[Gestion des rôles et permissions]
     
-    C --> C1[Création et modification d'entreprises]
-    C --> C2[Gestion des contacts d'entreprise]
+    C --> C2[Gestion CRUD des contacts d'entreprise]
+    C --> C1[Gestion CRUD d'entreprises]
     
-    D --> D1[Ajout et modification de collaborateurs]
+    D --> D1[Gestion CRUD des collaborateurs]
     D --> D2[Gestion des informations personnelles]
     
-    E --> E1[Création de déclarations]
-    E --> E2[Suivi des déclarations]
-    E --> E3[Historique des déclarations]
+    E --> E1[Gestion CRUD de déclarations]
+    E --> E3[Gestion des statuts des déclarations]
     
-    G --> G1[Authentification]
-    G --> G2[Autorisation]
-    G --> G3[Audit et traçabilité]
+    F --> F1[Gestion des notifications]
+    F --> F3[Historique des notifications]
     
+    B2 -.-> C2
     C1 -.-> D1
     D1 -.-> E1
+    
+    %% Connexions avec le module de notifications
+    E3 -.-> F1
+    D1 -.-> F1
 ```
 
-## 6.2 Diagramme d'entités relationnelles
+## 6.2 Diagramme de classes
 
 ```mermaid
 classDiagram
@@ -179,6 +184,23 @@ classDiagram
         -String country
     }
     
+    class Notification {
+        -UUID id
+        -String message
+        -NotificationType type
+        -boolean read
+        -LocalDateTime createdAt
+        -User recipient
+        -UUID entityId
+    }
+    
+    class NotificationType {
+        <<enumeration>>
+        DIMONA_CREATED
+        DIMONA_STATUS_CHANGED
+        COLLABORATOR_CREATED
+    }
+    
     %% Relations d'héritage
     User <|-- SecretariatEmployee
     User <|-- CompanyContact
@@ -205,6 +227,10 @@ classDiagram
     %% Relations d'association - Groupe 5
     Company "1" o-- "*" Dimona : declares
     Collaborator "1" o-- "*" Dimona : associated with
+    
+    %% Relations d'association - Groupe 6
+    User "1" -- "*" Notification : receives
+    Notification "1" -- "1" NotificationType : has
 ```
 
 ## 6.3 Diagramme d'entités relationnelles
@@ -346,9 +372,20 @@ erDiagram
         UUID company_id FK
     }
     
+    TNOTIFICATION {
+        UUID id PK
+        string message
+        string type
+        boolean read
+        datetime createdAt
+        UUID recipient_id FK
+        UUID entityId
+    }
+    
     TUSER ||--o{ USER_ROLES : ""
     TUSER }o--|| TSOCIAL_SECRETARIAT : ""
     TUSER }o--|| TCOMPANY : ""
+    TUSER ||--o{ TNOTIFICATION : ""
     
     TCOMPANY ||--o{ COMPANY_JOINT_COMMITTEES : ""
     TCOMPANY ||--o{ TCOLLABORATOR : ""
