@@ -29,6 +29,7 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \usetikzlibrary{arrows,shapes,positioning,shadows,trees}
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm,headheight=15.5pt]{geometry}
 \usepackage{hyperref}
 
 % Configuration des couleurs
@@ -62,24 +63,29 @@
   xrightmargin=5pt
 }
 
-% Configuration de la géométrie de la page
-\settrimmedsize{\stockheight}{\stockwidth}{*}
-\setlrmarginsandblock{2.5cm}{2.5cm}{*}
-\setulmarginsandblock{2.5cm}{2.5cm}{*}
-\checkandfixthelayout
+% Configuration de la géométrie de la page avec le package geometry
+% (Les commandes memoir de géométrie sont désactivées car nous utilisons maintenant geometry)
+% \settrimmedsize{\stockheight}{\stockwidth}{*}
+% \setlrmarginsandblock{2.5cm}{2.5cm}{*}
+% \setulmarginsandblock{2.5cm}{2.5cm}{*}
+% \checkandfixthelayout
 
 % Configuration des en-têtes et pieds de page
 \pagestyle{fancy}
-\fancyhf{}
+\setlength{\headheight}{15.5pt} % Ajusté selon les recommandations
+\fancyhf{} % Efface tous les en-têtes et pieds de page
 \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
 \renewcommand{\sectionmark}[1]{\markright{#1}}
-\fancyhead[LE,RO]{\thepage}
-\fancyhead[LO]{\textit{\leftmark}}
-\fancyhead[RE]{\textit{\rightmark}}
+\fancyhead[L]{\rightmark}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{\textit{Travail de Fin d'Études CHIHI Mehdi 2024-2025}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
 \fancypagestyle{plain}{
   \fancyhf{}
   \fancyfoot[C]{\thepage}
   \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
 }
 
 % Configuration des titres
@@ -117,11 +123,6 @@
 % Configuration des listes
 \setlist[itemize]{leftmargin=*}
 \setlist[enumerate]{leftmargin=*}
-
-% Empêcher les coupures de paragraphes entre les pages
-\widowpenalty=10000
-\clubpenalty=10000
-\raggedbottom
 
 % Configuration des épigraphes
 \setlength{\epigraphwidth}{0.7\textwidth}
