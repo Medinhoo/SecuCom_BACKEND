@@ -15,14 +15,12 @@ rectangle "Système de SecuCom - Fonctionnalités Client" {
 
   package "Gestion des collaborateurs" {
     usecase "Consulter liste collaborateurs" as UC7
-    usecase "Ajouter collaborateur" as UC8
-    usecase "Modifier collaborateur" as UC9
-    usecase "Supprimer collaborateur" as UC10
+    usecase "Gérer collaborateur" as UC8
   }
 
   package "Gestion des déclarations DIMONA" {
-    usecase "Créer demande DIMONA" as UC11
-    usecase "Consulter statut DIMONA" as UC12
+    usecase "Gérer demande DIMONA" as UC9
+    usecase "Consulter statut DIMONA" as UC10
   }
 }
 
@@ -32,8 +30,5 @@ client --> UC7
 client --> UC8
 client --> UC9
 client --> UC10
-client --> UC11
-client --> UC12
 
-UC11 ..> UC12 : <<includes>>
 @enduml
