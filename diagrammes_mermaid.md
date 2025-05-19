@@ -42,6 +42,53 @@ graph TD
 classDiagram
     %% Disposition optimisée pour éviter les chevauchements
     
+    %% Définition des énumérations
+    class Role {
+        <<enumeration>>
+        ROLE_COMPANY
+        ROLE_SECRETARIAT
+        ROLE_ADMIN
+    }
+    
+    class AccountStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+        LOCKED
+        PENDING
+    }
+    
+    class CollaboratorType {
+        <<enumeration>>
+        EMPLOYEE
+        WORKER
+        FREELANCE
+        INTERN
+        STUDENT
+    }
+    
+    class WorkDurationType {
+        <<enumeration>>
+        FIXED
+        VARIABLE
+    }
+    
+    class DimonaStatus {
+        <<enumeration>>
+        TO_SEND
+        TO_CONFIRM
+        TO_CORRECT
+        CREATED
+        REJECTED
+    }
+    
+    class NotificationType {
+        <<enumeration>>
+        DIMONA_CREATED
+        DIMONA_STATUS_CHANGED
+        COLLABORATOR_CREATED
+    }
+    
     %% Définition des classes
     class User {
         -UUID id
@@ -58,21 +105,6 @@ classDiagram
         -AccountStatus accountStatus
         +addRole(Role) void
         +hasRole(Role) boolean
-    }
-    
-    class Role {
-        <<enumeration>>
-        ROLE_COMPANY
-        ROLE_SECRETARIAT
-        ROLE_ADMIN
-    }
-    
-    class AccountStatus {
-        <<enumeration>>
-        ACTIVE
-        INACTIVE
-        LOCKED
-        PENDING
     }
     
     class SocialSecretariat {
@@ -147,28 +179,13 @@ classDiagram
         -Address establishmentUnitAddress
     }
     
-    class CollaboratorType {
-        <<enumeration>>
-        EMPLOYEE
-        WORKER
-        FREELANCE
-        INTERN
-        STUDENT
-    }
-    
-    class WorkDurationType {
-        <<enumeration>>
-        FIXED
-        VARIABLE
-    }
-    
     class Dimona {
         -UUID id
         -String type
         -Date entryDate
         -Date exitDate
         -String exitReason
-        -String status
+        -DimonaStatus status
         -String onssReference
         -String errorMessage
         -Collaborator collaborator
@@ -194,20 +211,12 @@ classDiagram
         -UUID entityId
     }
     
-    class NotificationType {
-        <<enumeration>>
-        DIMONA_CREATED
-        DIMONA_STATUS_CHANGED
-        COLLABORATOR_CREATED
-    }
-    
     %% Relations d'héritage
     User <|-- SecretariatEmployee
     User <|-- CompanyContact
     
     %% Relations d'association - Groupe 1
     User "*" -- "*" Role : has
-    User "1" -- "1" AccountStatus : has
     
     %% Relations d'association - Groupe 2
     SocialSecretariat "1" *-- "*" SecretariatEmployee : employs
@@ -221,8 +230,6 @@ classDiagram
     %% Relations d'association - Groupe 4
     Collaborator "1" --> "1" Address : has
     Collaborator "1" --> "1" Address : establishment
-    Collaborator "1" --> "1" CollaboratorType : is of type
-    Collaborator "1" --> "1" WorkDurationType : has
     
     %% Relations d'association - Groupe 5
     Company "1" o-- "*" Dimona : declares
@@ -230,7 +237,6 @@ classDiagram
     
     %% Relations d'association - Groupe 6
     User "1" -- "*" Notification : receives
-    Notification "1" -- "1" NotificationType : has
 ```
 
 ## 6.3 Diagramme d'entités relationnelles
@@ -365,7 +371,7 @@ erDiagram
         date entryDate
         date exitDate
         string exitReason
-        string status
+        int status
         string onssReference
         string errorMessage
         UUID collaborator_id FK
@@ -407,11 +413,8 @@ sequenceDiagram
     actor CC as Contact Entreprise
     actor ESS as Employé Secrétariat Social
     participant Sys as Système SecuCom
-    participant DB as Base de données
     
     Admin->>Sys: Créer compte utilisateur (type company)
-    Sys->>DB: Enregistrer utilisateur avec données minimales
-    DB-->>Sys: Confirmation création
     Sys-->>Admin: Afficher confirmation
     
     Note over Admin,CC: Transmission des identifiants (hors système)
@@ -422,13 +425,8 @@ sequenceDiagram
     Sys->>Sys: Valider données
     
     alt Données valides
-        Sys->>DB: Enregistrer informations entreprise
-        DB-->>Sys: Confirmation enregistrement
         Sys-->>CC: Afficher confirmation
-        
         ESS->>Sys: Accéder aux informations entreprise
-        Sys->>DB: Récupérer informations
-        DB-->>Sys: Retourner informations
         Sys-->>ESS: Afficher informations entreprise
     else Données invalides
         Sys-->>CC: Afficher erreurs de validation
@@ -442,34 +440,25 @@ sequenceDiagram
     actor CE as Contact Entreprise
     actor SS as Secrétariat Social
     participant Sys as Système SecuCom
-    participant DB as Base de données
     
     alt Initiation par le Contact Entreprise
         CE->>Sys: Initier ajout d'un collaborateur
         Sys-->>CE: Afficher formulaire d'ajout
         CE->>Sys: Remplir et soumettre le formulaire
-        Sys->>DB: Enregistrer collaborateur
-        DB-->>Sys: Confirmation enregistrement
         Sys-->>CE: Confirmer création du collaborateur
         
         Sys->>SS: Notifier nouvel ajout de collaborateur
         SS->>Sys: Consulter données du collaborateur
-        Sys->>DB: Récupérer données collaborateur
-        DB-->>Sys: Données collaborateur
         Sys-->>SS: Afficher détails collaborateur
         
     else Initiation par le Secrétariat Social
         SS->>Sys: Initier ajout d'un collaborateur
         Sys-->>SS: Afficher formulaire d'ajout
         SS->>Sys: Remplir et soumettre le formulaire
-        Sys->>DB: Enregistrer collaborateur
-        DB-->>Sys: Confirmation enregistrement
         Sys-->>SS: Confirmer création du collaborateur
         
         Sys->>CE: Notifier ajout d'un collaborateur
         CE->>Sys: Consulter données du collaborateur
-        Sys->>DB: Récupérer données collaborateur
-        DB-->>Sys: Données collaborateur
         Sys-->>CE: Afficher détails collaborateur
     end
 ```
@@ -481,36 +470,34 @@ sequenceDiagram
     actor CE as Contact Entreprise
     actor SS as Secrétariat Social
     participant Sys as Système SecuCom
-    participant DB as Base de données
     participant ONSS as Site ONSS (Externe)
     
     alt Initiation par le Contact Entreprise
         CE->>Sys: Initier création DIMONA
         Sys-->>CE: Afficher formulaire DIMONA
         CE->>Sys: Soumettre données DIMONA
-        Sys->>DB: Enregistrer demande DIMONA
-        DB-->>Sys: Confirmation enregistrement
         Sys-->>CE: Confirmer réception demande
+        Sys-->>Sys: Mettre à jour statut DIMONA en "À envoyer"
         
         Sys->>SS: Notifier nouvelle demande DIMONA
         SS->>Sys: Consulter demande DIMONA
-        Sys->>DB: Récupérer données demande
-        DB-->>Sys: Données demande DIMONA
         Sys-->>SS: Afficher détails demande
+
         
     else Initiation par le Secrétariat Social
         SS->>Sys: Initier création DIMONA
         Sys-->>SS: Afficher formulaire DIMONA
         SS->>Sys: Soumettre données DIMONA
-        Sys->>DB: Enregistrer demande DIMONA
-        DB-->>Sys: Confirmation enregistrement
         Sys-->>SS: Confirmer enregistrement
         
+        Sys-->>Sys: Mettre à jour statut DIMONA en "À confirmer"
         Sys->>CE: Notifier nouvelle demande DIMONA
         CE->>Sys: Consulter demande DIMONA
-        Sys->>DB: Récupérer données demande
-        DB-->>Sys: Données demande DIMONA
         Sys-->>CE: Afficher détails demande
+        CE->>Sys: Confirmer données demande DIMONA
+        Sys-->>Sys: Mettre à jour statut DIMONA en "À envoyer"
+        Sys->>SS: Notifier demande DIMONA à envoyer
+
     end
     
     SS->>ONSS: Créer DIMONA sur le site de l'ONSS
@@ -519,28 +506,21 @@ sequenceDiagram
         ONSS-->>SS: Confirmer création DIMONA
         
         SS->>Sys: Mettre à jour statut DIMONA (créée)
-        Sys->>DB: Enregistrer nouveau statut
-        DB-->>Sys: Confirmation mise à jour
         Sys-->>CE: Notifier création DIMONA
     else DIMONA refusée ou données insuffisantes
         ONSS-->>SS: Refuser DIMONA / Signaler données insuffisantes
         
         SS->>Sys: Changer statut en "à corriger"
-        Sys->>DB: Enregistrer statut "à corriger"
-        DB-->>Sys: Confirmation mise à jour
         Sys-->>CE: Notifier besoin de correction
         
         CE->>Sys: Modifier données DIMONA
-        Sys->>DB: Mettre à jour demande DIMONA
-        DB-->>Sys: Confirmation mise à jour
+        Sys-->>Sys: Mettre à jour statut DIMONA en "À envoyer"
         Sys-->>SS: Notifier corrections effectuées
         
         SS->>ONSS: Créer DIMONA sur le site de l'ONSS (nouvelle tentative)
         ONSS-->>SS: Confirmer création DIMONA
         
         SS->>Sys: Mettre à jour statut DIMONA (créée)
-        Sys->>DB: Enregistrer nouveau statut
-        DB-->>Sys: Confirmation mise à jour
         Sys-->>CE: Notifier création DIMONA
     end
 ```

@@ -30,6 +30,7 @@
 \usepackage{pgfplots}
 \usetikzlibrary{arrows,shapes,positioning,shadows,trees}
 \usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm,headheight=15.5pt]{geometry}
+\usepackage{pdflscape}
 \usepackage{hyperref}
 
 % Configuration des couleurs
@@ -230,15 +231,6 @@
 \include{glossaire}
 
 % Annexes
-\appendix
-\chapter{Annexes}
-\section{Diagrammes UML complémentaires}
-Cette annexe présente des diagrammes UML supplémentaires qui n'ont pas été inclus dans le corps principal du document mais qui apportent des précisions sur l'architecture et le fonctionnement de SecuCom.
-
-\section{Code source des composants principaux}
-Cette annexe présente les extraits de code source les plus significatifs du projet, accompagnés d'explications détaillées sur leur fonctionnement et leur rôle dans l'architecture globale.
-
-\section{Manuel d'utilisation}
-Cette annexe fournit un guide d'utilisation simplifié de la plateforme SecuCom, destiné aux utilisateurs finaux (employés du secrétariat social et contacts des entreprises clientes).
+\include{annexe_diagrammes}
 
 \end{document}

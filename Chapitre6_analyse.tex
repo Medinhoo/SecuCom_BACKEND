@@ -1,15 +1,15 @@
 \chapter{Analyse}
 
-\noindent Cette section présente une analyse détaillée de l'architecture et du fonctionnement de \textbf{SecuCom}. À travers différents diagrammes UML, nous allons explorer la structure du système, ses composants, les relations entre les entités, ainsi que les flux d'interactions entre les différents acteurs et le système.
+\noindent Cette section présente une analyse détaillée de l'architecture et du fonctionnement de \textbf{SecuCom}. À travers différents diagrammes, nous allons explorer la structure du système, ses composants, les relations entre les entités, ainsi que les flux d'interactions entre les différents acteurs et le système.
 
-\section{Diagramme de composants}
+\section{Diagramme de modules fonctionnels}
 
-\noindent Le diagramme de composants ci-dessous illustre l'architecture modulaire de \textbf{SecuCom}, mettant en évidence les principaux modules du système, leurs sous-composants et leurs interactions.
+\noindent Le Diagramme de modules fonctionnels ci-dessous illustre l'architecture modulaire de \textbf{SecuCom}, mettant en évidence les principaux modules du système, leurs sous-composants et leurs interactions. Il est important de noter que ce diagramme n'est pas un diagramme UML standard, mais plutôt une représentation simplifiée conçue pour offrir une vue d'ensemble des différents modules du système et leurs relations.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{ComposantsDiagram.png}
-\caption{Diagramme de composants de SecuCom}
+\caption{Diagramme de modules fonctionnels de SecuCom (voir annexe)}
 \end{figure}
 
 \vspace{0.5cm}
@@ -17,7 +17,7 @@
 \noindent Le système \textbf{SecuCom} est structuré autour de cinq modules principaux, chacun responsable d'un aspect spécifique de la plateforme :
 
 \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
-  \item \textbf{Module Gestion des Utilisateurs} : Comprend quatre sous-composants critiques :
+  \item \textbf{Module Gestion des Utilisateurs} : Comprend quatre sous-modules critiques :
     \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item \textit{Authentification} : Gère la vérification des identités des utilisateurs.
       \item \textit{Audit et traçabilité} : Enregistre les actions des utilisateurs pour des fins de sécurité.
@@ -76,6 +76,7 @@
 ]
 Cette architecture modulaire facilite la maintenance et l'évolution du système, chaque module pouvant être développé, testé et mis à jour de manière relativement indépendante, tout en préservant les interactions nécessaires entre les différentes fonctionnalités.
 \end{tcolorbox}
+\newpage
 
 \section{Diagramme de classes}
 
@@ -84,7 +85,7 @@ Cette architecture modulaire facilite la maintenance et l'évolution du système
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{ClassDiagram.png}
-\caption{Diagramme de classes de SecuCom}
+\caption{Diagramme de classes de SecuCom (voir annexe)}
 \end{figure}
 
 \vspace{0.5cm}
@@ -132,7 +133,7 @@ Les relations entre ces classes sont clairement définies avec des multiplicité
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{ERD.png}
-\caption{Diagramme d'entités relationnelles de SecuCom}
+\caption{Diagramme d'entités relationnelles de SecuCom (voir annexe)}
 \end{figure}
 
 \vspace{0.5cm}
@@ -192,7 +193,7 @@ Les relations entre ces classes sont clairement définies avec des multiplicité
   \item DIMONA: collaborator\_id, company\_id
 \end{itemize}
 
-\vspace{0.5cm}
+\vspace{1cm}
 
 \textbf{Contraintes d'unicité (UNIQUE):}
 \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
@@ -242,9 +243,10 @@ Les diagrammes de séquence sont particulièrement utiles pour comprendre la dyn
 
 \noindent Le diagramme de séquence ci-dessous illustre le processus de création d'une entreprise dans le système \textbf{SecuCom}. Ce processus implique trois acteurs principaux : l'Administrateur, le Contact Entreprise et l'Employé du Secrétariat Social.
 
+\vspace{0.5cm}
+
 \begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{SD_creation_entreprise.png}
+\makebox[\textwidth][c]{\includegraphics[width=1.2\textwidth]{SD_creation_entreprise.png}}
 \caption{Diagramme de séquence - Création d'une entreprise}
 \end{figure}
 
@@ -303,8 +305,7 @@ Ce processus constitue la première étape dans le cycle de vie d'une entreprise
 \noindent Le diagramme de séquence ci-dessous illustre le processus d'ajout d'un collaborateur (employé) dans le système \textbf{SecuCom}. Ce processus implique plusieurs composants du système et inclut des validations importantes pour garantir l'intégrité des données.
 
 \begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{SD_creation_collaborateur.png}
+\makebox[\textwidth][c]{\includegraphics[width=1.7\textwidth]{SD_creation_collaborateur.png}}
 \caption{Diagramme de séquence - Ajout d'un collaborateur}
 \end{figure}
 
@@ -345,17 +346,16 @@ Ce processus met en évidence plusieurs aspects importants du système SecuCom :
 
 L'ajout d'un collaborateur est une étape cruciale qui permet ensuite de procéder à d'autres opérations comme la création de déclarations DIMONA pour ce collaborateur.
 
-\subsection{Cas d'utilisation : Création d'une déclaration DIMONA}
+\newpage
+\subsection{Cas d'utilisation : Gestion d'une déclaration DIMONA}
 
 \noindent Le diagramme de séquence ci-dessous illustre le processus de création d'une déclaration DIMONA dans le système \textbf{SecuCom}. Ce processus peut être initié soit par le Contact Entreprise, soit par le Secrétariat Social, et implique une validation manuelle des données avant la soumission à l'ONSS.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{SD_creation_dimona.png}
-\caption{Diagramme de séquence - Création d'une déclaration DIMONA}
+\caption{Diagramme de séquence - Création d'une déclaration DIMONA (voir annexe)}
 \end{figure}
-
-\vspace{0.5cm}
 
 \subsubsection{Description du processus}
 
@@ -377,6 +377,7 @@ L'ajout d'un collaborateur est une étape cruciale qui permet ensuite de procéd
       \item Le Secrétariat Social crée la déclaration DIMONA sur le site officiel de l'ONSS.
     \end{itemize}
 
+  \newpage
   \item \textbf{Traitement du résultat} :
     \begin{itemize}
       \item \textbf{Si la DIMONA est acceptée par l'ONSS} :
@@ -396,6 +397,34 @@ L'ajout d'un collaborateur est une étape cruciale qui permet ensuite de procéd
     \end{itemize}
 \end{enumerate}
 
+\subsubsection{Gestion des statuts des déclarations DIMONA}
+
+\noindent Le système \textbf{SecuCom} implémente un flux de statuts précis pour suivre l'évolution des déclarations DIMONA :
+
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item \textbf{À confirmer} : Statut initial lorsqu'une déclaration est créée par le Secrétariat Social. La déclaration attend la confirmation du Contact Entreprise.
+  
+  \item \textbf{À envoyer} : Statut attribué dans deux cas :
+    \begin{itemize}
+      \item Lorsqu'une déclaration est initiée directement par le Contact Entreprise
+      \item Lorsqu'une déclaration créée par le Secrétariat Social a été confirmée par le Contact Entreprise
+    \end{itemize}
+    Ce statut indique que la déclaration est prête à être soumise à l'ONSS par le Secrétariat Social.
+  
+  \item \textbf{À corriger} : Statut attribué lorsque l'ONSS refuse la déclaration ou signale des données insuffisantes. Ce statut déclenche une notification au Contact Entreprise pour qu'il apporte les corrections nécessaires.
+  
+  \item \textbf{Créée} : Statut final attribué lorsque la déclaration a été acceptée par l'ONSS, confirmant que la déclaration DIMONA est officiellement enregistrée.
+\end{itemize}
+
+\noindent Ce système de gestion des statuts permet :
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item Une visibilité claire sur l'état d'avancement de chaque déclaration
+  \item Une communication efficace entre le Contact Entreprise et le Secrétariat Social
+  \item Un suivi des actions requises par chaque partie
+  \item Une traçabilité complète du processus de déclaration
+\end{itemize}
+
+\newpage
 \subsubsection{Aspects importants du processus}
 
 \noindent Ce processus met en évidence plusieurs aspects importants du système \textbf{SecuCom} :
