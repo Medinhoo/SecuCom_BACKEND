@@ -2,7 +2,7 @@
 \addcontentsline{toc}{chapter}{Introduction}
 \markboth{Introduction}{}
 
-À l'ère de la transformation numérique, la digitalisation des processus administratifs est devenue incontournable pour les entreprises. Dans ce contexte, les secrétariats sociaux font face à des défis croissants en matière de gestion des données et de communication avec leurs clients. En Belgique, la complexité des réglementations sociales et la nécessité d'un traitement rapide et fiable des déclarations d'emploi (DIMONA) exigent des solutions informatiques adaptées et performantes. Pourtant, de nombreux secrétariats sociaux indépendants continuent de fonctionner avec des processus manuels, générant inefficacités, erreurs et pertes de temps considérables.
+À l'ère numérique, la digitalisation des processus administratifs est devenue essentielle pour les entreprises. Les secrétariats sociaux belges font face à des défis importants liés aux réglementations complexes et au traitement des déclarations DIMONA. Malgré cela, de nombreux secrétariats sociaux indépendants utilisent encore des processus manuels, source d'inefficacités et d'erreurs.
 
 \section*{Objectifs du TFE}
 \addcontentsline{toc}{section}{Objectifs du TFE}
@@ -48,13 +48,13 @@ Ce Travail de Fin d'Études, présenté à l'ISFCE dans le cadre de l'obtention 
 \noindent Pour atteindre ces objectifs, ce travail s'articule autour de quatre étapes principales, organisées selon une approche méthodique et rigoureuse.
 
 \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
-  \item \textbf{Analyse des besoins} : Des entretiens approfondis ont été menés avec les responsables de Sodabel, tant en présentiel qu'à distance, afin d'identifier précisément les points de friction dans les processus actuels. Cette phase a permis de comprendre les flux de travail existants (principalement basés sur WhatsApp et email) et d'en cerner les limitations opérationnelles.
+  \item \textbf{Analyse des besoins} : Entretiens avec les responsables de Sodabel pour identifier les points de friction dans les processus actuels (WhatsApp, email) et leurs limitations.
 
-  \item \textbf{Conception} : Sur la base des besoins identifiés, des spécifications fonctionnelles et techniques détaillées ont été élaborées, accompagnées d'une modélisation UML complète. Les choix technologiques ont été effectués en tenant compte des contraintes spécifiques du projet, des exigences de sécurité et des compétences disponibles.
+  \item \textbf{Conception} : Élaboration des spécifications fonctionnelles et techniques avec modélisation UML, en tenant compte des contraintes du projet.
 
-  \item \textbf{Implémentation} : Le développement du backend a été réalisé en suivant les bonnes pratiques de développement logiciel, avec une attention particulière portée à la sécurité des données sensibles et à la séparation stricte des espaces privés entre le secrétariat social et ses clients.
+  \item \textbf{Implémentation} : Développement backend suivant les bonnes pratiques, avec focus sur la sécurité des données et la séparation des espaces clients.
 
-  \item \textbf{Validation} : Des tests rigoureux ont été mis en place pour vérifier le bon fonctionnement des fonctionnalités développées et s'assurer que la solution répond effectivement aux problématiques identifiées lors de la phase d'analyse initiale.
+  \item \textbf{Validation} : Tests des fonctionnalités pour garantir que la solution répond aux problématiques identifiées.
 \end{itemize}
 
 \begin{note}
@@ -65,15 +65,18 @@ Une approche itérative a été privilégiée tout au long du projet, permettant
 \addcontentsline{toc}{section}{Structure du document}
 \markright{Structure du document}
 
-Le corps de ce TFE s'articule autour de plusieurs sections qui suivent la progression logique du projet, depuis l'analyse initiale jusqu'à l'évaluation finale.
-\noindent La section \textbf{Contexte} présente l'environnement des secrétariats sociaux en Belgique, avec un focus particulier sur Sodabel et ses problématiques actuelles : processus manuels chronophages, communication fragmentée entre WhatsApp et emails, et risques d'erreurs élevés compromettant la qualité du service.
+Ce TFE suit une progression logique depuis l'analyse initiale jusqu'à l'évaluation finale, structurée comme suit :
 
-\noindent La section \textbf{Description du sujet} expose en détail SecuCom, ses objectifs stratégiques et son mode de fonctionnement, en mettant l'accent sur sa simplicité d'utilisation et son interface intuitive, conçues spécifiquement pour répondre aux besoins identifiés lors de la phase d'analyse.
-
-\noindent L'\textbf{Analyse de l'existant} confronte notre proposition aux solutions dominantes du marché comme EasyPay ou Liantis, en soulignant comment SecuCom se distingue par son approche minimaliste et ciblée, offrant une alternative pertinente aux solutions plus complexes et coûteuses actuellement disponibles.
-
-\noindent Les sections \textbf{Exigences et besoins} et \textbf{Analyse} présentent respectivement les besoins métier, techniques et de sécurité identifiés, puis traduisent ces exigences en une analyse structurée à l'aide de diagrammes UML, permettant de visualiser clairement l'architecture du système.
-
-\noindent Les parties \textbf{Conception} et \textbf{Développement} détaillent les choix architecturaux et décrivent l'implémentation des principales fonctionnalités : création et gestion des entreprises clientes, administration des collaborateurs et traitement sécurisé des déclarations DIMONA, conformément aux exigences légales belges.
-
-\noindent Enfin, les sections \textbf{Aspects financiers} et \textbf{Conclusion} proposent une évaluation économique rigoureuse du projet et une synthèse qui ouvre sur les perspectives d'évolution de la solution, notamment dans le cadre d'une collaboration professionnelle future et d'un déploiement à plus grande échelle.
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item \textbf{Contexte} : Présentation de l'environnement des secrétariats sociaux en Belgique et des problématiques spécifiques de Sodabel.
+  
+  \item \textbf{Description du sujet} : Exposition de SecuCom, ses objectifs et son fonctionnement, avec accent sur sa simplicité d'utilisation.
+  
+  \item \textbf{Analyse de l'existant} : Comparaison avec les solutions du marché et positionnement de SecuCom comme alternative ciblée.
+  
+  \item \textbf{Exigences, besoins et Analyse} : Identification des besoins et leur traduction en architecture système via des diagrammes UML.
+  
+  \item \textbf{Conception et Développement} : Présentation des choix architecturaux et de l'implémentation des fonctionnalités principales.
+  
+  \item \textbf{Aspects financiers et Conclusion} : Évaluation économique du projet et perspectives d'évolution future.
+\end{itemize}
