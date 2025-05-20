@@ -1,0 +1,236 @@
+\documentclass[12pt,a4paper,oneside]{memoir}
+
+% Packages de base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{epigraph}
+\usepackage{mdframed}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{pdfpages}
+\usepackage{csquotes}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{arrows,shapes,positioning,shadows,trees}
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm,headheight=15.5pt]{geometry}
+\usepackage{pdflscape}
+\usepackage{hyperref}
+
+% Configuration des couleurs
+\definecolor{primarycolor}{RGB}{0, 75, 130}
+\definecolor{secondarycolor}{RGB}{70, 130, 180}
+\definecolor{lightgray}{RGB}{240, 240, 240}
+\definecolor{darkgray}{RGB}{80, 80, 80}
+\definecolor{linkcolor}{RGB}{0, 90, 160}
+\definecolor{citecolor}{RGB}{0, 120, 120}
+\definecolor{urlcolor}{RGB}{0, 90, 160}
+
+% Configuration des listings pour le code Java
+\lstset{
+  language=Java,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{green!50!black}\itshape,
+  stringstyle=\color{red},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+  frame=single,
+  framesep=5pt,
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  tabsize=2,
+  captionpos=b,
+  backgroundcolor=\color{lightgray!30},
+  xleftmargin=15pt,
+  xrightmargin=5pt
+}
+
+% Configuration de la géométrie de la page avec le package geometry
+% (Les commandes memoir de géométrie sont désactivées car nous utilisons maintenant geometry)
+% \settrimmedsize{\stockheight}{\stockwidth}{*}
+% \setlrmarginsandblock{2.5cm}{2.5cm}{*}
+% \setulmarginsandblock{2.5cm}{2.5cm}{*}
+% \checkandfixthelayout
+
+% Configuration des en-têtes et pieds de page
+\pagestyle{fancy}
+\setlength{\headheight}{15.5pt} % Ajusté selon les recommandations
+\fancyhf{} % Efface tous les en-têtes et pieds de page
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\sectionmark}[1]{\markright{#1}}
+\fancyhead[L]{\rightmark}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{\textit{Travail de Fin d'Études CHIHI Mehdi 2024-2025}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+% Configuration des titres
+\titleformat{\chapter}
+  {\normalfont\huge\bfseries\color{primarycolor}}
+  {\thechapter.}
+  {0.5em}
+  {}
+  [\vspace{0.1cm}\rule{\textwidth}{0.5pt}]
+\titlespacing*{\chapter}{0pt}{0pt}{20pt}
+
+% Configuration des titres de chapitres non numérotés
+\titleformat{name=\chapter,numberless}
+  {\normalfont\huge\bfseries\color{primarycolor}\centering}
+  {}
+  {0em}
+  {}
+  [\vspace{0.1cm}\rule{\textwidth}{0.5pt}]
+\titlespacing*{name=\chapter,numberless}{0pt}{0pt}{40pt}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{primarycolor}}
+  {\thesection}
+  {1em}
+  {}
+\titlespacing*{\section}{0pt}{3.5ex plus 1ex minus .2ex}{2.3ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{secondarycolor}}
+  {\thesubsection}
+  {1em}
+  {}
+\titlespacing*{\subsection}{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+% Configuration des listes
+\setlist[itemize]{leftmargin=*}
+\setlist[enumerate]{leftmargin=*}
+
+% Configuration des épigraphes
+\setlength{\epigraphwidth}{0.7\textwidth}
+\setlength{\epigraphrule}{0pt}
+\renewcommand{\epigraphflush}{center}
+\renewcommand{\sourceflush}{center}
+
+% Configuration des hyperliens
+\hypersetup{
+  colorlinks=true,
+  linkcolor=linkcolor,
+  citecolor=citecolor,
+  urlcolor=urlcolor,
+  pdfborder={0 0 0},
+  breaklinks=true,
+  pdfauthor={Mehdi CHIHI},
+  pdftitle={SecuCom : Plateforme de gestion pour secrétariats sociaux},
+  pdfsubject={Travail de Fin d'Études},
+  pdfkeywords={secrétariat social, DIMONA, backend, Java, Spring Boot}
+}
+
+% Environnements personnalisés
+\newmdenv[
+  linecolor=primarycolor,
+  backgroundcolor=lightgray!30,
+  linewidth=2pt,
+  topline=true,
+  bottomline=true,
+  leftline=true,
+  rightline=true,
+  innertopmargin=10pt,
+  innerbottommargin=10pt,
+  innerrightmargin=10pt,
+  innerleftmargin=10pt,
+  roundcorner=5pt
+]{infobox}
+
+\newtcolorbox{definition}[1][]{
+  colback=blue!5!white,
+  colframe=blue!75!black,
+  fonttitle=\bfseries,
+  title=Définition,
+  #1
+}
+
+\newtcolorbox{note}[1][]{
+  colback=yellow!10!white,
+  colframe=yellow!50!black,
+  fonttitle=\bfseries,
+  title=Note,
+  #1
+}
+
+\begin{document}
+
+% Page de garde
+\include{pageDeGarde}
+
+
+% Remerciements
+\include{remerciements}
+
+% Table des matières
+\tableofcontents
+\newpage
+
+% Liste des figures
+\listoffigures
+\newpage
+
+% Introduction
+\include{Chapitre1_Intro}
+
+% Contexte
+\include{Chapitre2_Contexte}
+
+% Description du sujet
+\include{Chapitre3_Description}
+
+% Analyse de l'existant
+\include{Chapitre4_analyse_existant}
+
+% Exigences et besoins
+\include{Chapitre5_exigences_besoins}
+
+% Analyse
+\include{Chapitre6_analyse}
+
+% Conception
+\include{chapitre7_conception}
+
+% Développement
+\include{chapitre8_developpement}
+
+% Aspects financiers
+\include{chapitre9_aspects_financiers}
+
+% Conclusion
+\include{chapitre10_conclusion}
+
+% Bibliographie
+\include{bibliographie}
+
+% Glossaire
+\include{glossaire}
+
+% Annexes
+\include{annexe_diagrammes}
+
+\end{document}
