@@ -2,95 +2,179 @@
 
 Cette section présente les choix technologiques qui ont guidé la conception de SecuCom, tant au niveau du frontend que du backend.
 
-\section{Introduction à l'architecture technique}
+\section{Architecture technique}
 
-L'architecture de SecuCom suit un modèle client-serveur avec une séparation claire entre le frontend et le backend. Le système est organisé en plusieurs couches :
+\noindent L'architecture de SecuCom suit un modèle client-serveur avec une séparation claire entre le frontend et le backend. Le système est organisé en couches distinctes :
 
-\begin{itemize}
-  \item \textbf{Couche Présentation} : Interface utilisateur ReactJS communiquant avec le backend via des API REST
-  \item \textbf{Couche API} : Contrôleurs REST exposant les fonctionnalités du système
-  \item \textbf{Couche Service} : Services métier implémentant la logique fonctionnelle
-  \item \textbf{Couche Persistance} : Repositories gérant l'accès aux données via JPA/Hibernate
-  \item \textbf{Couche Sécurité} : Composants gérant l'authentification et l'autorisation via JWT
+\vspace{0.5cm}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Couche} & \textbf{Description} \\
+\hline
+Présentation & Interface utilisateur ReactJS communiquant avec le backend via une API REST \\
+\hline
+API & Contrôleurs REST exposant les fonctionnalités du système \\
+\hline
+Service & Services métier implémentant la logique fonctionnelle \\
+\hline
+Persistance & Repositories gérant l'accès aux données via JPA/Hibernate \\
+\hline
+Sécurité & Composants gérant l'authentification et l'autorisation via JWT \\
+\hline
+\end{tabular}
+\caption{Architecture en couches de SecuCom}
+\end{table}
+
+\vspace{0.5cm}
+
+\begin{tcolorbox}[
+  title={\textbf{Avantages de l'architecture en couches}},
+  colback=blue!5!white,
+  colframe=primarycolor,
+  fonttitle=\bfseries,
+  boxrule=0.5mm,
+  arc=2mm,
+  left=6mm,
+  right=6mm,
+  top=6mm,
+  bottom=6mm
+]
+Cette architecture permet une séparation claire des responsabilités, offrant plusieurs avantages :
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item Facilité de développement et de maintenance
+  \item Testabilité améliorée de chaque couche
+  \item Évolutivité et extensibilité du système
+  \item Réutilisation des composants
 \end{itemize}
+\end{tcolorbox}
 
-Cette architecture en couches permet une séparation claire des responsabilités, facilitant le développement, les tests et la maintenance.
-
+\newpage
 \section{Technologies front-end}
 
-Pour le développement du frontend, plusieurs technologies modernes ont été sélectionnées afin de créer une interface utilisateur intuitive et professionnelle.
-
 \subsection{ReactJS}
-
-ReactJS constitue le cœur du frontend. Je suis particulièrement attiré par ce framework JavaScript largement adopté dans le monde professionnel pour sa philosophie déclarative et son approche basée sur les composants. Ses principaux avantages incluent :
-
-\begin{itemize}
-  \item Modèle basé sur les composants facilitant la réutilisation
-  \item DOM virtuel optimisant les performances
+\noindent Framework JavaScript basé sur des composants UI réutilisables offrant :
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item Performances optimisées grâce au DOM virtuel
   \item Écosystème riche et communauté active
-  \item Flux de données unidirectionnel simplifiant le débogage
+  \item Approche déclarative simplifiant le développement
+  \item Facilité d'intégration avec d'autres bibliothèques
 \end{itemize}
 
-\subsection{TypeScript}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{SecuComPreviewDocs.png}
+  \caption{Aperçu de l'interface de SecuCom}
+  \label{fig:secucomPreview}
+\end{figure}
 
-TypeScript a été choisi comme surcouche à JavaScript pour apporter un typage statique, améliorant la détection précoce des erreurs et la maintenabilité du code.
+\subsection{TypeScript}
+\noindent Surcouche à JavaScript apportant un typage statique pour améliorer la détection précoce des erreurs et la maintenabilité du code.
+
+\begin{note}
+TypeScript réduit les erreurs à l'exécution, améliore la qualité du code et facilite la collaboration grâce à une meilleure documentation implicite.
+\end{note}
 
 \subsection{Tailwind CSS}
-
-Tailwind CSS a été adopté pour son approche "utility-first" offrant une grande flexibilité dans la conception tout en maintenant une cohérence visuelle.
+\noindent Framework CSS "utility-first" offrant flexibilité dans la conception tout en maintenant une cohérence visuelle.
 
 \subsection{shadcnUI}
-
-Cette collection de composants UI réutilisables, construits avec Radix UI et stylisés avec Tailwind CSS, a permis d'accélérer le développement de l'interface tout en garantissant l'accessibilité.
+\noindent Collection de composants UI réutilisables construits avec Radix UI et stylisés avec Tailwind CSS, accélérant le développement tout en garantissant l'accessibilité et la modernité de l'interface.
 
 \subsection{React Router DOM}
-
-React Router DOM gère la navigation entre les différentes pages de l'application, offrant une expérience utilisateur fluide sans rechargement complet des pages.
+\noindent Bibliothèque gérant la navigation entre les différentes pages de l'application sans rechargement complet.
 
 \section{Technologies back-end}
 
-Le backend a été développé avec des technologies robustes centrées autour de l'écosystème Spring.
-
 \subsection{Spring Boot}
-
-Spring Boot constitue le fondement du backend. Je suis littéralement tombé sous le charme de ce framework qui simplifie considérablement le développement d'applications Java grâce à sa configuration automatique et ses conventions judicieuses.
+\noindent Framework Java simplifiant le développement d'applications grâce à sa configuration automatique et ses conventions.
 
 \subsection{Spring Security}
-
-Spring Security gère l'authentification et l'autorisation, offrant une protection contre les attaques courantes et permettant une gestion fine des accès basée sur les rôles.
+\noindent Module gérant l'authentification et l'autorisation, offrant une protection contre les attaques courantes et permettant une gestion fine des accès basée sur les rôles.
 
 \subsection{Spring Data JPA}
-
-Cette bibliothèque simplifie l'accès aux données en réduisant le code boilerplate nécessaire pour les opérations CRUD, permettant de se concentrer sur la logique métier.
+\noindent Bibliothèque simplifiant l'accès aux données en réduisant le code boilerplate pour les opérations CRUD.
 
 \subsection{Hibernate}
-
-Utilisé comme implémentation de JPA, Hibernate facilite la traduction entre les objets Java et les tables de la base de données.
+\noindent Implémentation de JPA facilitant la traduction entre les objets Java et les tables de la base de données.
 
 \subsection{JSON Web Tokens (JWT)}
+\noindent Mécanisme d'authentification sans état facilitant la scalabilité et éliminant le besoin de stocker des sessions côté serveur.
 
-Les JWT ont été choisis comme mécanisme d'authentification sans état, facilitant la scalabilité et éliminant le besoin de stocker des sessions côté serveur.
+\begin{note}
+JWT a été choisi pour son approche sans état, permettant une meilleure scalabilité et simplifiant la gestion des sessions utilisateurs.
+\end{note}
 
-\subsection{Base de données relationnelle}
+\subsection{Base de données H2}
+\noindent Base de données relationnelle légère choisie pour sa simplicité et sa capacité à gérer les relations entre entités.
 
-Une base de données relationnelle a été choisie pour sa capacité à gérer efficacement les relations complexes entre les différentes entités du système.
+\noindent Avantages dans le contexte de SecuCom :
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item Base embarquée sans installation séparée
+  \item Compatibilité avec Spring Boot et Hibernate
+  \item Fonctionnement en mémoire ou sur disque
+  \item Console web intégrée pour le débogage
+\end{itemize}
 
-\section{Pourquoi ces choix ?}
+\begin{note}
+H2 offre un bon compromis entre simplicité et fonctionnalités relationnelles. Une migration vers PostgreSQL ou MySQL serait possible pour un déploiement à grande échelle.
+\end{note}
 
-Les choix technologiques ont été guidés par plusieurs critères essentiels :
+\section{Justification des choix technologiques}
 
-\subsection{Adéquation aux besoins fonctionnels}
+\noindent Les technologies ont été sélectionnées selon quatre critères principaux :
 
-Les technologies choisies répondent parfaitement aux exigences de SecuCom, notamment la création d'une interface intuitive (ReactJS, Tailwind), la gestion de données complexes (Spring Data JPA, Hibernate) et la sécurisation des accès (Spring Security, JWT).
+\vspace{0.5cm}
 
-\subsection{Maturité et productivité}
+\begin{figure}[h]
+\centering
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Critère} & \textbf{Application à SecuCom} \\
+\hline
+Adéquation fonctionnelle & 
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item Interface intuitive (ReactJS, Tailwind)
+  \item Gestion de données complexes (Spring Data JPA, Hibernate)
+  \item Sécurisation des accès (Spring Security, JWT)
+\end{itemize} \\
+\hline
+Maturité et productivité & 
+Écosystèmes Spring et ReactJS éprouvés avec communautés actives, offrant équilibre entre puissance et productivité \\
+\hline
+Maintenabilité et évolutivité & 
+Architecture modulaire et séparation des responsabilités facilitant maintenance et évolution, TypeScript améliorant la robustesse du code \\
+\hline
+Pertinence professionnelle & 
+Technologies valorisées sur le marché du travail, permettant de développer des compétences recherchées \\
+\hline
+\end{tabular}
+\caption{Critères de sélection des technologies}
+\end{figure}
 
-L'écosystème Spring et ReactJS sont des solutions éprouvées avec des communautés actives, offrant un excellent équilibre entre puissance et productivité de développement.
+\vspace{1cm}
 
-\subsection{Maintenabilité et évolutivité}
+\begin{tcolorbox}[
+  title={\textbf{Cohérence technologique}},
+  colback=blue!5!white,
+  colframe=primarycolor,
+  fonttitle=\bfseries,
+  boxrule=0.5mm,
+  arc=2mm,
+  left=6mm,
+  right=6mm,
+  top=6mm,
+  bottom=6mm
+]
+\noindent La stack technologique de SecuCom offre une cohérence entre frontend et backend, équilibrant :
+\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
+  \item Robustesse pour une application professionnelle
+  \item Flexibilité pour l'adaptation aux besoins évolutifs
+  \item Productivité pour un développement rapide
+  \item Maintenabilité pour la pérennité de la solution
+\end{itemize}
 
-L'architecture modulaire et la séparation claire des responsabilités facilitent la maintenance et l'évolution du système, tandis que TypeScript améliore la robustesse du code frontend.
-
-\subsection{Développement professionnel}
-
-Mon attrait personnel pour Spring Boot et ma volonté de maîtriser ReactJS pour créer des interfaces utilisateur professionnelles et réactives ont également influencé ces choix technologiques, me permettant de développer des compétences valorisées sur le marché du travail.
+\noindent Cette approche permet à SecuCom d'évoluer pour répondre aux besoins de Sodabel et d'autres secrétariats sociaux.
+\end{tcolorbox}
