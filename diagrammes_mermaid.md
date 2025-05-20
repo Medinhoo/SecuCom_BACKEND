@@ -417,7 +417,7 @@ sequenceDiagram
     Admin->>Sys: Créer compte utilisateur (type company)
     Sys-->>Admin: Afficher confirmation
     
-    Note over Admin,CC: Transmission des identifiants (hors système)
+    Note over Admin,CC: Transmission des identifiants<br/>(hors système)
     
     CC->>Sys: Se connecter au système
     Sys-->>CC: Afficher formulaire d'informations entreprise

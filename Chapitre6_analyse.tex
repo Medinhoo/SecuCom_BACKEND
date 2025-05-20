@@ -193,7 +193,7 @@ Les relations entre ces classes sont clairement définies avec des multiplicité
   \item DIMONA: collaborator\_id, company\_id
 \end{itemize}
 
-\vspace{1cm}
+\newpage
 
 \textbf{Contraintes d'unicité (UNIQUE):}
 \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
@@ -226,7 +226,7 @@ Les relations entre ces classes sont clairement définies avec des multiplicité
   top=6mm,
   bottom=6mm
 ]
-Ce modèle de données permet de représenter efficacement les relations complexes entre les différentes entités du système, tout en assurant l'intégrité des données et la performance des requêtes. La structure relationnelle facilite la gestion des associations entre entreprises, collaborateurs et déclarations DIMONA, tout en maintenant une séparation claire des responsabilités. Les mécanismes de suppression en cascade garantissent la cohérence des données en évitant les références orphelines.
+Ce modèle de données permet de représenter efficacement les relations complexes entre les différentes entités du système, tout en assurant l'intégrité des données et la performance des requêtes.\\ La structure relationnelle facilite la gestion des associations entre entreprises, collaborateurs et déclarations DIMONA, tout en maintenant une séparation claire des responsabilités.
 \end{tcolorbox}
 
 \newpage
@@ -256,18 +256,18 @@ Les diagrammes de séquence sont particulièrement utiles pour comprendre la dyn
 
 \begin{enumerate}
   \item \textbf{Initialisation par l'Administrateur} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item L'Administrateur crée un compte utilisateur de type "company" avec les données minimales obligatoires.
       \item Le système enregistre ces informations dans la base de données et confirme la création du compte.
     \end{itemize}
 
   \item \textbf{Transmission des identifiants} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item L'Administrateur transmet les identifiants de connexion au Contact Entreprise (cette étape se déroule en dehors du système, par exemple par email ou téléphone).
     \end{itemize}
 
   \item \textbf{Complétion des informations par le Contact Entreprise} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item Le Contact Entreprise se connecte au système avec les identifiants fournis.
       \item Le système affiche un formulaire permettant de compléter les informations de l'entreprise.
       \item Le Contact Entreprise saisit et soumet les informations complètes de son entreprise (nom, numéro BCE, numéro ONSS, numéro TVA, etc.).
@@ -275,13 +275,13 @@ Les diagrammes de séquence sont particulièrement utiles pour comprendre la dyn
     \end{itemize}
 
   \item \textbf{Traitement des données} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item Si les données sont valides, le système les enregistre dans la base de données et confirme l'enregistrement au Contact Entreprise.
       \item Si les données sont invalides, le système affiche les erreurs de validation au Contact Entreprise, qui doit les corriger et soumettre à nouveau.
     \end{itemize}
 
   \item \textbf{Accès par le Secrétariat Social} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item L'Employé du Secrétariat Social peut accéder aux informations de l'entreprise.
       \item Le système récupère ces informations depuis la base de données et les affiche à l'Employé du Secrétariat Social.
     \end{itemize}
@@ -315,19 +315,19 @@ Ce processus constitue la première étape dans le cycle de vie d'une entreprise
 
 \begin{enumerate}
   \item \textbf{Initiation de l'ajout} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item \textbf{Scénario 1} : Le Contact Entreprise initie l'ajout d'un collaborateur, remplit le formulaire et soumet les données au système.
       \item \textbf{Scénario 2} : Le Secrétariat Social initie l'ajout d'un collaborateur, remplit le formulaire et soumet les données au système.
     \end{itemize}
 
   \item \textbf{Enregistrement des données} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item Le système enregistre directement les informations du collaborateur dans la base de données.
       \item Une confirmation est envoyée à l'initiateur de la demande.
     \end{itemize}
 
   \item \textbf{Notification} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item L'autre partie (celle qui n'a pas initié l'ajout) est notifiée de l'ajout du collaborateur.
       \item Elle peut consulter les détails du collaborateur ajouté.
     \end{itemize}
@@ -361,33 +361,33 @@ L'ajout d'un collaborateur est une étape cruciale qui permet ensuite de procéd
 
 \begin{enumerate}
   \item \textbf{Initiation de la demande} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item \textbf{Scénario 1} : Le Contact Entreprise initie la création d'une déclaration DIMONA, remplit le formulaire et soumet les données au système.
       \item \textbf{Scénario 2} : Le Secrétariat Social initie la création d'une déclaration DIMONA, remplit le formulaire et soumet les données au système.
     \end{itemize}
 
   \item \textbf{Notification} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item L'autre partie (celle qui n'a pas initié la demande) est notifiée de la nouvelle demande DIMONA.
       \item Elle peut consulter les détails de la demande.
     \end{itemize}
 
   \item \textbf{Création sur le site de l'ONSS} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item Le Secrétariat Social crée la déclaration DIMONA sur le site officiel de l'ONSS.
     \end{itemize}
 
   \newpage
   \item \textbf{Traitement du résultat} :
-    \begin{itemize}
+    \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
       \item \textbf{Si la DIMONA est acceptée par l'ONSS} :
-        \begin{itemize}
+        \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
           \item L'ONSS confirme la création de la DIMONA.
           \item Le Secrétariat Social met à jour le statut dans le système.
           \item Le Contact Entreprise est notifié de la création effective de la DIMONA.
         \end{itemize}
       \item \textbf{Si la DIMONA est refusée ou les données sont insuffisantes} :
-        \begin{itemize}
+        \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
           \item L'ONSS refuse la DIMONA ou signale que les données sont insuffisantes.
           \item Le Secrétariat Social change le statut de la demande en "à corriger".
           \item Le Contact Entreprise est notifié et doit modifier les données.
@@ -399,32 +399,19 @@ L'ajout d'un collaborateur est une étape cruciale qui permet ensuite de procéd
 
 \subsubsection{Gestion des statuts des déclarations DIMONA}
 
-\noindent Le système \textbf{SecuCom} implémente un flux de statuts précis pour suivre l'évolution des déclarations DIMONA :
+\noindent Le système \textbf{SecuCom} implémente un flux de statuts précis pour suivre l'évolution des déclarations DIMONA qui permet une \textbf{visibilité claire sur l'état d'avancement de chaque déclaration}, une \textbf{communication efficace entre le Contact Entreprise et le Secrétariat Social}, un \textbf{suivi des actions requises} par chaque partie et une \textbf{traçabilité complète du processus de déclaration} :
 
 \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
   \item \textbf{À confirmer} : Statut initial lorsqu'une déclaration est créée par le Secrétariat Social. La déclaration attend la confirmation du Contact Entreprise.
   
-  \item \textbf{À envoyer} : Statut attribué dans deux cas :
-    \begin{itemize}
-      \item Lorsqu'une déclaration est initiée directement par le Contact Entreprise
-      \item Lorsqu'une déclaration créée par le Secrétariat Social a été confirmée par le Contact Entreprise
-    \end{itemize}
-    Ce statut indique que la déclaration est prête à être soumise à l'ONSS par le Secrétariat Social.
+  \item \textbf{À envoyer} : Ce statut indique que la déclaration est prête à être soumise à l'ONSS par le Secrétariat Social. Ce statut est attribué soit lorsqu'une déclaration est initiée directement par le Contact Entreprise, soit lorsqu'une déclaration créée par le Secrétariat Social a été confirmée par le Contact Entreprise.
   
   \item \textbf{À corriger} : Statut attribué lorsque l'ONSS refuse la déclaration ou signale des données insuffisantes. Ce statut déclenche une notification au Contact Entreprise pour qu'il apporte les corrections nécessaires.
   
   \item \textbf{Créée} : Statut final attribué lorsque la déclaration a été acceptée par l'ONSS, confirmant que la déclaration DIMONA est officiellement enregistrée.
 \end{itemize}
-
-\noindent Ce système de gestion des statuts permet :
-\begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
-  \item Une visibilité claire sur l'état d'avancement de chaque déclaration
-  \item Une communication efficace entre le Contact Entreprise et le Secrétariat Social
-  \item Un suivi des actions requises par chaque partie
-  \item Une traçabilité complète du processus de déclaration
-\end{itemize}
-
 \newpage
+
 \subsubsection{Aspects importants du processus}
 
 \noindent Ce processus met en évidence plusieurs aspects importants du système \textbf{SecuCom} :
@@ -465,7 +452,7 @@ La création d'une déclaration DIMONA représente l'aboutissement du processus 
 %   \item Ajout d'un collaborateur à l'entreprise
 %   \item Création d'une déclaration DIMONA pour le collaborateur
 %   \item Suivi du statut de la déclaration DIMONA, qui peut être :
-%      \begin{itemize}
+    %  \begin{itemize}[leftmargin=*,label=\textcolor{darkgray}{$\bullet$},itemsep=0.3em]
 %        \item En attente
 %        \item Acceptée
 %        \item Rejetée (nécessitant une correction et une nouvelle soumission)
