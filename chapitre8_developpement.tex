@@ -755,10 +755,6 @@ Ces rôles sont utilisés à plusieurs niveaux pour sécuriser l'application :
 Par exemple, un utilisateur avec le rôle \texttt{ROLE\_COMPANY} ne peut accéder qu'aux données de sa propre entreprise, tandis qu'un utilisateur avec le rôle \texttt{ROLE\_SECRETARIAT} peut accéder aux données de toutes les entreprises.
 \end{note}
 
-\subsection{Sécurisation des communications}
-
-Toutes les communications entre le client et le serveur sont sécurisées via HTTPS/TLS, assurant la confidentialité et l'intégrité des données en transit. La configuration CORS (Cross-Origin Resource Sharing) est également mise en place pour contrôler quels domaines peuvent accéder aux ressources de l'API.
-
 \subsection{Gestion des exceptions de sécurité}
 
 SecuCom implémente une gestion centralisée des exceptions via \texttt{GlobalExceptionHandler}, qui intercepte les exceptions liées à la sécurité et renvoie des réponses appropriées sans exposer de détails sensibles.
