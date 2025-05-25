@@ -7,6 +7,7 @@ import com.socialsecretariat.espacepartage.service.DimonaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,6 +50,13 @@ public class DimonaController {
     public ResponseEntity<List<DimonaDto>> getDimonasByCompany(@PathVariable UUID companyId) {
         List<DimonaDto> dimonas = dimonaService.getDimonasByCompany(companyId);
         return ResponseEntity.ok(dimonas);
+    }
+
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SECRETARIAT')")
+    public ResponseEntity<DimonaDto> updateDimonaStatus(@PathVariable UUID id, @RequestParam String status) {
+        DimonaDto dimona = dimonaService.updateDimonaStatus(id, status);
+        return ResponseEntity.ok(dimona);
     }
 
     @DeleteMapping("/{id}")

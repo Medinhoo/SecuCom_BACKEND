@@ -1,6 +1,8 @@
 package com.socialsecretariat.espacepartage.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.socialsecretariat.espacepartage.model.User;
@@ -32,4 +34,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     // Find users by first name and last name (for search functionality)
     List<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(String firstName, String lastName);
+
+    // Find company contacts by company ID
+    @Query("SELECT u FROM CompanyContact u WHERE u.company.id = :companyId")
+    List<User> findCompanyContactsByCompanyId(@Param("companyId") UUID companyId);
 }

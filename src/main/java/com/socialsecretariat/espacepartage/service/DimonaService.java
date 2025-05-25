@@ -9,6 +9,7 @@ import com.socialsecretariat.espacepartage.repository.DimonaRepository;
 import com.socialsecretariat.espacepartage.repository.CollaboratorRepository;
 import com.socialsecretariat.espacepartage.repository.CompanyRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,19 +19,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 @Transactional
 public class DimonaService {
     private final DimonaRepository dimonaRepository;
     private final CollaboratorRepository collaboratorRepository;
     private final CompanyRepository companyRepository;
-
-    public DimonaService(DimonaRepository dimonaRepository,
-            CollaboratorRepository collaboratorRepository,
-            CompanyRepository companyRepository) {
-        this.dimonaRepository = dimonaRepository;
-        this.collaboratorRepository = collaboratorRepository;
-        this.companyRepository = companyRepository;
-    }
+    private final NotificationService notificationService;
 
     public DimonaDto createDimona(CreateDimonaRequest request) {
         Collaborator collaborator = collaboratorRepository.findById(request.getCollaboratorId())
@@ -46,6 +41,39 @@ public class DimonaService {
         dimona.setStatus("TO_SEND");
 
         Dimona savedDimona = dimonaRepository.save(dimona);
+        
+        // Send notification about DIMONA creation
+        String collaboratorName = collaborator.getFirstName() + " " + collaborator.getLastName();
+        notificationService.notifyDimonaCreated(
+            savedDimona.getId(),
+            collaboratorName,
+            company.getId(),
+            null // We'll need to get the current user ID from the security context in a real implementation
+        );
+        
+        return convertToDto(savedDimona);
+    }
+
+    public DimonaDto updateDimonaStatus(UUID id, String newStatus) {
+        Dimona dimona = dimonaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Dimona not found"));
+        
+        String oldStatus = dimona.getStatus();
+        dimona.setStatus(newStatus);
+        
+        Dimona savedDimona = dimonaRepository.save(dimona);
+        
+        // Send notification about status change if status actually changed
+        if (!oldStatus.equals(newStatus)) {
+            String collaboratorName = dimona.getCollaborator().getFirstName() + " " + dimona.getCollaborator().getLastName();
+            notificationService.notifyDimonaStatusChanged(
+                savedDimona.getId(),
+                collaboratorName,
+                newStatus,
+                dimona.getCompany().getId()
+            );
+        }
+        
         return convertToDto(savedDimona);
     }
 

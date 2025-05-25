@@ -24,6 +24,7 @@ public class CollaboratorService {
     private final CollaboratorRepository collaboratorRepository;
     private final CompanyRepository companyRepository;
     private final DimonaRepository dimonaRepository;
+    private final NotificationService notificationService;
 
     public CollaboratorDto createCollaborator(CollaboratorDto dto) {
         if (collaboratorRepository.existsByNationalNumber(dto.getNationalNumber())) {
@@ -35,7 +36,18 @@ public class CollaboratorService {
         collaborator.setCreatedAt(LocalDate.now());
         collaborator.setUpdatedAt(LocalDate.now());
 
-        return toDto(collaboratorRepository.save(collaborator));
+        Collaborator savedCollaborator = collaboratorRepository.save(collaborator);
+        
+        // Send notification about collaborator creation
+        String collaboratorName = savedCollaborator.getFirstName() + " " + savedCollaborator.getLastName();
+        notificationService.notifyCollaboratorCreated(
+            savedCollaborator.getId(),
+            collaboratorName,
+            savedCollaborator.getCompany().getId(),
+            null // We'll need to get the current user ID from the security context in a real implementation
+        );
+
+        return toDto(savedCollaborator);
     }
 
     public CollaboratorDto updateCollaborator(UUID id, CollaboratorDto dto) {
