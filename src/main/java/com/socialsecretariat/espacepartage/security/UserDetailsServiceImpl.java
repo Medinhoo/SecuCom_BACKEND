@@ -36,7 +36,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // Parameters:
         // 1. username - the user's username
         // 2. password - the encoded password
-        // 3. enabled - true if the account is ACTIVE (user can log in)
+        // 3. enabled - true if the account is ACTIVE or PENDING (user can log in)
         // 4. accountNonExpired - true if the account is not expired (we don't use
         // expiration, so always true)
         // 5. credentialsNonExpired - true if credentials haven't expired (we don't use
@@ -47,7 +47,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                user.getAccountStatus() == User.AccountStatus.ACTIVE,
+                user.getAccountStatus() == User.AccountStatus.ACTIVE || user.getAccountStatus() == User.AccountStatus.PENDING,
                 true,
                 true,
                 user.getAccountStatus() != User.AccountStatus.LOCKED,

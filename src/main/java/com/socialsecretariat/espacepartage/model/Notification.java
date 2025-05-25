@@ -50,7 +50,8 @@ public class Notification {
     public enum NotificationType {
         DIMONA_CREATED,
         DIMONA_STATUS_CHANGED,
-        COLLABORATOR_CREATED
+        COLLABORATOR_CREATED,
+        COMPANY_COMPLETED
     }
 
     // Helper method to mark as read

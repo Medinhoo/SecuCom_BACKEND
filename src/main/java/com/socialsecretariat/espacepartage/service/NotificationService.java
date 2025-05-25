@@ -253,6 +253,31 @@ public class NotificationService {
     }
 
     /**
+     * Create notification for company completion
+     */
+    public void notifyCompanyCompleted(UUID companyId, String companyName, UUID updatedByUserId) {
+        log.debug("Creating company completion notification for company: {}", companyName);
+        
+        String message = String.format("L'entreprise '%s' a été complétée avec toutes les informations requises.", companyName);
+        
+        // Notify secretariat users
+        List<User> secretariatUsers = userRepository.findByRolesContaining(User.Role.ROLE_SECRETARIAT);
+        for (User user : secretariatUsers) {
+            if (!user.getId().equals(updatedByUserId)) { // Don't notify the user who made the update
+                createNotification(user.getId(), message, NotificationType.COMPANY_COMPLETED, companyId);
+            }
+        }
+
+        // Notify admin users
+        List<User> adminUsers = userRepository.findByRolesContaining(User.Role.ROLE_ADMIN);
+        for (User user : adminUsers) {
+            if (!user.getId().equals(updatedByUserId)) { // Don't notify the user who made the update
+                createNotification(user.getId(), message, NotificationType.COMPANY_COMPLETED, companyId);
+            }
+        }
+    }
+
+    /**
      * Convert Notification entity to DTO
      */
     private NotificationDto convertToDto(Notification notification) {
