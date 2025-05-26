@@ -2,6 +2,7 @@ package com.socialsecretariat.espacepartage.service;
 
 import com.socialsecretariat.espacepartage.dto.DimonaDto;
 import com.socialsecretariat.espacepartage.dto.CreateDimonaRequest;
+import com.socialsecretariat.espacepartage.dto.UpdateDimonaRequest;
 import com.socialsecretariat.espacepartage.model.Dimona;
 import com.socialsecretariat.espacepartage.model.Collaborator;
 import com.socialsecretariat.espacepartage.model.Company;
@@ -73,6 +74,40 @@ public class DimonaService {
             company.getId(),
             null // We'll need to get the current user ID from the security context in a real implementation
         );
+        
+        return convertToDto(savedDimona);
+    }
+
+    public DimonaDto updateDimona(UUID id, UpdateDimonaRequest request) {
+        Dimona dimona = dimonaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Dimona not found"));
+        
+        // Update the dimona fields
+        dimona.setType(request.getType());
+        dimona.setEntryDate(request.getEntryDate());
+        dimona.setExitDate(request.getExitDate());
+        dimona.setExitReason(request.getExitReason());
+        dimona.setOnssReference(request.getOnssReference());
+        dimona.setErrorMessage(request.getErrorMessage());
+        
+        Dimona savedDimona = dimonaRepository.save(dimona);
+        
+        // Record update in status history
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getName() != null) {
+            String username = authentication.getName();
+            User currentUser = userRepository.findByUsername(username).orElse(null);
+            
+            if (currentUser != null) {
+                statusHistoryService.recordDimonaStatusChange(
+                    savedDimona.getId(),
+                    savedDimona.getStatus().toString(),
+                    savedDimona.getStatus().toString(),
+                    "Mise à jour des informations de la déclaration DIMONA",
+                    currentUser
+                );
+            }
+        }
         
         return convertToDto(savedDimona);
     }
