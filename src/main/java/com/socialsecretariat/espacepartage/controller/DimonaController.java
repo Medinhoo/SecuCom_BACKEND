@@ -3,6 +3,7 @@ package com.socialsecretariat.espacepartage.controller;
 import com.socialsecretariat.espacepartage.dto.DimonaDto;
 import com.socialsecretariat.espacepartage.dto.CreateDimonaRequest;
 import com.socialsecretariat.espacepartage.dto.auth.MessageResponse;
+import com.socialsecretariat.espacepartage.model.Dimona;
 import com.socialsecretariat.espacepartage.service.DimonaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -55,8 +56,13 @@ public class DimonaController {
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SECRETARIAT')")
     public ResponseEntity<DimonaDto> updateDimonaStatus(@PathVariable UUID id, @RequestParam String status) {
-        DimonaDto dimona = dimonaService.updateDimonaStatus(id, status);
-        return ResponseEntity.ok(dimona);
+        try {
+            Dimona.Status statusEnum = Dimona.Status.valueOf(status);
+            DimonaDto dimona = dimonaService.updateDimonaStatus(id, statusEnum);
+            return ResponseEntity.ok(dimona);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status value: " + status + ". Valid values are: TO_CONFIRM, TO_SEND, IN_PROGRESS, REJECTED, ACCEPTED");
+        }
     }
 
     @DeleteMapping("/{id}")

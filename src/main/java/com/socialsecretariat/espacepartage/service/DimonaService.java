@@ -38,7 +38,7 @@ public class DimonaService {
         BeanUtils.copyProperties(request, dimona);
         dimona.setCollaborator(collaborator);
         dimona.setCompany(company);
-        dimona.setStatus("TO_SEND");
+        dimona.setStatus(Dimona.Status.TO_SEND);
 
         Dimona savedDimona = dimonaRepository.save(dimona);
         
@@ -54,22 +54,22 @@ public class DimonaService {
         return convertToDto(savedDimona);
     }
 
-    public DimonaDto updateDimonaStatus(UUID id, String newStatus) {
+    public DimonaDto updateDimonaStatus(UUID id, Dimona.Status newStatus) {
         Dimona dimona = dimonaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Dimona not found"));
         
-        String oldStatus = dimona.getStatus();
+        Dimona.Status oldStatus = dimona.getStatus();
         dimona.setStatus(newStatus);
         
         Dimona savedDimona = dimonaRepository.save(dimona);
         
         // Send notification about status change if status actually changed
-        if (!oldStatus.equals(newStatus)) {
+        if (oldStatus != newStatus) {
             String collaboratorName = dimona.getCollaborator().getFirstName() + " " + dimona.getCollaborator().getLastName();
             notificationService.notifyDimonaStatusChanged(
                 savedDimona.getId(),
                 collaboratorName,
-                newStatus,
+                newStatus.toString(),
                 dimona.getCompany().getId()
             );
         }

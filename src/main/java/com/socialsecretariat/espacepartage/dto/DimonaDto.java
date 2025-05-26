@@ -1,5 +1,6 @@
 package com.socialsecretariat.espacepartage.dto;
 
+import com.socialsecretariat.espacepartage.model.Dimona;
 import lombok.Data;
 import java.util.Date;
 import java.util.UUID;
@@ -11,7 +12,7 @@ public class DimonaDto {
     private Date entryDate;
     private Date exitDate;
     private String exitReason;
-    private String status;
+    private Dimona.Status status;
     private String onssReference;
     private String errorMessage;
     private UUID collaboratorId;
