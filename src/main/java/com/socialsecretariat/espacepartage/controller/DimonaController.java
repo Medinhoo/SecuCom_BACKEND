@@ -2,9 +2,11 @@ package com.socialsecretariat.espacepartage.controller;
 
 import com.socialsecretariat.espacepartage.dto.DimonaDto;
 import com.socialsecretariat.espacepartage.dto.CreateDimonaRequest;
+import com.socialsecretariat.espacepartage.dto.StatusHistoryDto;
 import com.socialsecretariat.espacepartage.dto.auth.MessageResponse;
 import com.socialsecretariat.espacepartage.model.Dimona;
 import com.socialsecretariat.espacepartage.service.DimonaService;
+import com.socialsecretariat.espacepartage.service.StatusHistoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +20,11 @@ import java.util.UUID;
 @RequestMapping("/dimona")
 public class DimonaController {
     private final DimonaService dimonaService;
+    private final StatusHistoryService statusHistoryService;
 
-    public DimonaController(DimonaService dimonaService) {
+    public DimonaController(DimonaService dimonaService, StatusHistoryService statusHistoryService) {
         this.dimonaService = dimonaService;
+        this.statusHistoryService = statusHistoryService;
     }
 
     @PostMapping
@@ -55,14 +59,42 @@ public class DimonaController {
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SECRETARIAT')")
-    public ResponseEntity<DimonaDto> updateDimonaStatus(@PathVariable UUID id, @RequestParam String status) {
+    public ResponseEntity<DimonaDto> updateDimonaStatus(
+            @PathVariable UUID id, 
+            @RequestParam String status,
+            @RequestParam(required = false) String reason) {
         try {
             Dimona.Status statusEnum = Dimona.Status.valueOf(status);
-            DimonaDto dimona = dimonaService.updateDimonaStatus(id, statusEnum);
+            DimonaDto dimona = dimonaService.updateDimonaStatus(id, statusEnum, reason);
             return ResponseEntity.ok(dimona);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid status value: " + status + ". Valid values are: TO_CONFIRM, TO_SEND, IN_PROGRESS, REJECTED, ACCEPTED");
         }
+    }
+
+    @GetMapping("/{id}/status-history")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SECRETARIAT')")
+    public ResponseEntity<List<StatusHistoryDto>> getDimonaStatusHistory(@PathVariable UUID id) {
+        List<StatusHistoryDto> history = statusHistoryService.getDimonaStatusHistory(id);
+        return ResponseEntity.ok(history);
+    }
+
+    @GetMapping("/{id}/status-history/latest")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SECRETARIAT')")
+    public ResponseEntity<StatusHistoryDto> getLatestDimonaStatusChange(@PathVariable UUID id) {
+        StatusHistoryDto latestChange = statusHistoryService.getLatestDimonaStatusChange(id);
+        if (latestChange != null) {
+            return ResponseEntity.ok(latestChange);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{id}/status-history/count")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SECRETARIAT')")
+    public ResponseEntity<Long> countDimonaStatusChanges(@PathVariable UUID id) {
+        long count = statusHistoryService.countDimonaStatusChanges(id);
+        return ResponseEntity.ok(count);
     }
 
     @DeleteMapping("/{id}")

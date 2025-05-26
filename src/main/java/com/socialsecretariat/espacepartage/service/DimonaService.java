@@ -5,12 +5,16 @@ import com.socialsecretariat.espacepartage.dto.CreateDimonaRequest;
 import com.socialsecretariat.espacepartage.model.Dimona;
 import com.socialsecretariat.espacepartage.model.Collaborator;
 import com.socialsecretariat.espacepartage.model.Company;
+import com.socialsecretariat.espacepartage.model.User;
 import com.socialsecretariat.espacepartage.repository.DimonaRepository;
 import com.socialsecretariat.espacepartage.repository.CollaboratorRepository;
 import com.socialsecretariat.espacepartage.repository.CompanyRepository;
+import com.socialsecretariat.espacepartage.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +29,9 @@ public class DimonaService {
     private final DimonaRepository dimonaRepository;
     private final CollaboratorRepository collaboratorRepository;
     private final CompanyRepository companyRepository;
+    private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final StatusHistoryService statusHistoryService;
 
     public DimonaDto createDimona(CreateDimonaRequest request) {
         Collaborator collaborator = collaboratorRepository.findById(request.getCollaboratorId())
@@ -42,6 +48,23 @@ public class DimonaService {
 
         Dimona savedDimona = dimonaRepository.save(dimona);
         
+        // Record status history for initial status
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getName() != null) {
+            String username = authentication.getName();
+            User currentUser = userRepository.findByUsername(username).orElse(null);
+            
+            if (currentUser != null) {
+                statusHistoryService.recordDimonaStatusChange(
+                    savedDimona.getId(),
+                    null, // No previous status for creation
+                    savedDimona.getStatus().toString(),
+                    "Création de la déclaration DIMONA",
+                    currentUser
+                );
+            }
+        }
+        
         // Send notification about DIMONA creation
         String collaboratorName = collaborator.getFirstName() + " " + collaborator.getLastName();
         notificationService.notifyDimonaCreated(
@@ -55,6 +78,10 @@ public class DimonaService {
     }
 
     public DimonaDto updateDimonaStatus(UUID id, Dimona.Status newStatus) {
+        return updateDimonaStatus(id, newStatus, null);
+    }
+
+    public DimonaDto updateDimonaStatus(UUID id, Dimona.Status newStatus, String changeReason) {
         Dimona dimona = dimonaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Dimona not found"));
         
@@ -63,8 +90,28 @@ public class DimonaService {
         
         Dimona savedDimona = dimonaRepository.save(dimona);
         
-        // Send notification about status change if status actually changed
+        // Record status history if status actually changed
         if (oldStatus != newStatus) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getName() != null) {
+                String username = authentication.getName();
+                User currentUser = userRepository.findByUsername(username).orElse(null);
+                
+                if (currentUser != null) {
+                    String reason = changeReason != null ? changeReason : 
+                        String.format("Changement de statut de %s vers %s", oldStatus, newStatus);
+                    
+                    statusHistoryService.recordDimonaStatusChange(
+                        savedDimona.getId(),
+                        oldStatus.toString(),
+                        newStatus.toString(),
+                        reason,
+                        currentUser
+                    );
+                }
+            }
+            
+            // Send notification about status change
             String collaboratorName = dimona.getCollaborator().getFirstName() + " " + dimona.getCollaborator().getLastName();
             notificationService.notifyDimonaStatusChanged(
                 savedDimona.getId(),
@@ -115,4 +162,5 @@ public class DimonaService {
         dto.setCompanyId(dimona.getCompany().getId());
         return dto;
     }
+
 }
