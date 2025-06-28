@@ -45,12 +45,18 @@ public class DimonaService {
         BeanUtils.copyProperties(request, dimona);
         dimona.setCollaborator(collaborator);
         dimona.setCompany(company);
-        dimona.setStatus(Dimona.Status.TO_SEND);
+        
+        // Set status based on user role
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isCompanyRole = authentication != null && 
+            authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_COMPANY"));
+        
+        dimona.setStatus(isCompanyRole ? Dimona.Status.TO_SEND : Dimona.Status.TO_CONFIRM);
 
         Dimona savedDimona = dimonaRepository.save(dimona);
         
         // Record status history for initial status
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getName() != null) {
             String username = authentication.getName();
             User currentUser = userRepository.findByUsername(username).orElse(null);
