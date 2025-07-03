@@ -109,6 +109,18 @@ public class Company {
     @Column(name = "declaration_frequency")
     private String declarationFrequency;
 
+    // Adresse de l'entreprise
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "street", column = @Column(name = "address_street")),
+            @AttributeOverride(name = "number", column = @Column(name = "address_number")),
+            @AttributeOverride(name = "box", column = @Column(name = "address_box")),
+            @AttributeOverride(name = "postalCode", column = @Column(name = "address_postal_code")),
+            @AttributeOverride(name = "city", column = @Column(name = "address_city")),
+            @AttributeOverride(name = "country", column = @Column(name = "address_country"))
+    })
+    private Address address;
+
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CompanyContact> contacts = new HashSet<>();
 

@@ -1,0 +1,480 @@
+{
+  "templateName": "CNT_Employe",
+  "displayName": "Contrat de travail employé",
+  "description": "Template pour générer un contrat de travail pour un employé",
+  "variables": {
+    "entreprise": {
+      "displayName": "Nom de l'entreprise",
+      "entity": "Company",
+      "field": "name",
+      "type": "string",
+      "required": true,
+      "description": "Nom officiel de l'entreprise"
+    },
+    "rue_entreprise": {
+      "displayName": "Rue de l'entreprise",
+      "entity": "Company",
+      "field": "address.street",
+      "type": "string",
+      "required": true,
+      "description": "Adresse rue de l'entreprise"
+    },
+    "n_entreprise": {
+      "displayName": "Numéro de l'entreprise",
+      "entity": "Company",
+      "field": "address.number",
+      "type": "string",
+      "required": true,
+      "description": "Numéro de l'adresse de l'entreprise"
+    },
+    "ville_entreprise": {
+      "displayName": "Ville de l'entreprise",
+      "entity": "Company",
+      "field": "address.city",
+      "type": "string",
+      "required": true,
+      "description": "Ville de l'entreprise"
+    },
+    "cp_entreprise": {
+      "displayName": "Code postal de l'entreprise",
+      "entity": "Company",
+      "field": "address.postalCode",
+      "type": "string",
+      "required": true,
+      "description": "Code postal de l'entreprise"
+    },
+    "representant": {
+      "displayName": "Représentant de l'entreprise",
+      "entity": "manual",
+      "field": null,
+      "type": "string",
+      "required": true,
+      "description": "Nom du représentant légal de l'entreprise"
+    },
+    "travailleur": {
+      "displayName": "Nom complet du travailleur",
+      "entity": "Collaborator",
+      "field": "firstName lastName",
+      "type": "string",
+      "required": true,
+      "description": "Prénom et nom du collaborateur"
+    },
+    "rue_travailleur": {
+      "displayName": "Rue du travailleur",
+      "entity": "Collaborator",
+      "field": "address.street",
+      "type": "string",
+      "required": true,
+      "description": "Adresse rue du collaborateur"
+    },
+    "n_travailleur": {
+      "displayName": "Numéro du travailleur",
+      "entity": "Collaborator",
+      "field": "address.number",
+      "type": "string",
+      "required": true,
+      "description": "Numéro de l'adresse du collaborateur"
+    },
+    "ville_travailleur": {
+      "displayName": "Ville du travailleur",
+      "entity": "Collaborator",
+      "field": "address.city",
+      "type": "string",
+      "required": true,
+      "description": "Ville du collaborateur"
+    },
+    "cp_travailleur": {
+      "displayName": "Code postal du travailleur",
+      "entity": "Collaborator",
+      "field": "address.postalCode",
+      "type": "string",
+      "required": true,
+      "description": "Code postal du collaborateur"
+    },
+    "date_debut": {
+      "displayName": "Date de début du contrat",
+      "entity": "manual",
+      "field": null,
+      "type": "date",
+      "required": true,
+      "description": "Date de début du contrat de travail"
+    },
+    "fonction_travailleur": {
+      "displayName": "Fonction du travailleur",
+      "entity": "Collaborator",
+      "field": "jobFunction",
+      "type": "string",
+      "required": true,
+      "description": "Fonction exercée par le collaborateur"
+    },
+    "taches_travailleur": {
+      "displayName": "Tâches du travailleur",
+      "entity": "manual",
+      "field": null,
+      "type": "text",
+      "required": true,
+      "description": "Description des tâches à effectuer"
+    },
+    "cb1": {
+      "displayName": "Contrat durée indéterminée",
+      "entity": "manual",
+      "field": null,
+      "type": "checkbox",
+      "required": false,
+      "description": "Cocher si contrat à durée indéterminée"
+    },
+    "cb2": {
+      "displayName": "Contrat durée déterminée",
+      "entity": "manual",
+      "field": null,
+      "type": "checkbox",
+      "required": false,
+      "description": "Cocher si contrat à durée déterminée"
+    },
+    "cb3": {
+      "displayName": "Travail nettement défini",
+      "entity": "manual",
+      "field": null,
+      "type": "checkbox",
+      "required": false,
+      "description": "Cocher si travail nettement défini"
+    },
+    "date_fin": {
+      "displayName": "Date de fin du contrat",
+      "entity": "manual",
+      "field": null,
+      "type": "date",
+      "required": false,
+      "description": "Date de fin du contrat (si CDD)"
+    },
+    "lieu_travail": {
+      "displayName": "Lieu de travail",
+      "entity": "manual",
+      "field": null,
+      "type": "string",
+      "required": true,
+      "description": "Lieu d'exécution du contrat"
+    },
+    "cb4": {
+      "displayName": "Horaire fixe",
+      "entity": "manual",
+      "field": null,
+      "type": "checkbox",
+      "required": false,
+      "description": "Cocher si horaire fixe"
+    },
+    "duree_heures_semaine": {
+      "displayName": "Durée hebdomadaire (heures)",
+      "entity": "manual",
+      "field": null,
+      "type": "number",
+      "required": true,
+      "description": "Nombre d'heures par semaine"
+    },
+    "l_de": {
+      "displayName": "Lundi - de",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de début lundi"
+    },
+    "l_a": {
+      "displayName": "Lundi - à",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de fin lundi"
+    },
+    "m_de": {
+      "displayName": "Mardi - de",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de début mardi"
+    },
+    "m_a": {
+      "displayName": "Mardi - à",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de fin mardi"
+    },
+    "e_de": {
+      "displayName": "Mercredi - de",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de début mercredi"
+    },
+    "e_a": {
+      "displayName": "Mercredi - à",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de fin mercredi"
+    },
+    "j_de": {
+      "displayName": "Jeudi - de",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de début jeudi"
+    },
+    "j_a": {
+      "displayName": "Jeudi - à",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de fin jeudi"
+    },
+    "v_de": {
+      "displayName": "Vendredi - de",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de début vendredi"
+    },
+    "v_a": {
+      "displayName": "Vendredi - à",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de fin vendredi"
+    },
+    "s_de": {
+      "displayName": "Samedi - de",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de début samedi"
+    },
+    "s_a": {
+      "displayName": "Samedi - à",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de fin samedi"
+    },
+    "d_de": {
+      "displayName": "Dimanche - de",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de début dimanche"
+    },
+    "d_a": {
+      "displayName": "Dimanche - à",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de fin dimanche"
+    },
+    "repos_de": {
+      "displayName": "Pause - de",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de début de pause"
+    },
+    "repos_a": {
+      "displayName": "Pause - à",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de fin de pause"
+    },
+    "repos2_de": {
+      "displayName": "Pause 2 - de",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de début de pause 2"
+    },
+    "repos2_a": {
+      "displayName": "Pause 2 - à",
+      "entity": "manual",
+      "field": null,
+      "type": "time",
+      "required": false,
+      "description": "Heure de fin de pause 2"
+    },
+    "cb5": {
+      "displayName": "Horaire flottant",
+      "entity": "manual",
+      "field": null,
+      "type": "checkbox",
+      "required": false,
+      "description": "Cocher si horaire flottant"
+    },
+    "dure2_heures_semaine": {
+      "displayName": "Durée moyenne hebdomadaire",
+      "entity": "manual",
+      "field": null,
+      "type": "number",
+      "required": false,
+      "description": "Nombre d'heures moyen par semaine (horaire flottant)"
+    },
+    "cb6": {
+      "displayName": "Autre répartition",
+      "entity": "manual",
+      "field": null,
+      "type": "checkbox",
+      "required": false,
+      "description": "Cocher si autre répartition"
+    },
+    "autre_repartition": {
+      "displayName": "Description autre répartition",
+      "entity": "manual",
+      "field": null,
+      "type": "text",
+      "required": false,
+      "description": "Description de l'autre répartition"
+    },
+    "remuneration": {
+      "displayName": "Rémunération",
+      "entity": "Collaborator",
+      "field": "salary",
+      "type": "decimal",
+      "required": true,
+      "description": "Montant de la rémunération"
+    },
+    "de_l_heure_par_mois": {
+      "displayName": "Unité de rémunération",
+      "entity": "manual",
+      "field": null,
+      "type": "select",
+      "required": true,
+      "description": "Unité de la rémunération",
+      "options": ["de l'heure", "par mois", "par jour", "par an"]
+    },
+    "cb7": {
+      "displayName": "Titres-repas",
+      "entity": "manual",
+      "field": null,
+      "type": "checkbox",
+      "required": false,
+      "description": "Cocher si titres-repas accordés"
+    },
+    "valeur_tr": {
+      "displayName": "Valeur titre-repas",
+      "entity": "manual",
+      "field": null,
+      "type": "decimal",
+      "required": false,
+      "description": "Valeur faciale du titre-repas"
+    },
+    "participation": {
+      "displayName": "Participation employé",
+      "entity": "manual",
+      "field": null,
+      "type": "decimal",
+      "required": false,
+      "description": "Participation de l'employé au titre-repas"
+    },
+    "intervention": {
+      "displayName": "Intervention patronale",
+      "entity": "manual",
+      "field": null,
+      "type": "decimal",
+      "required": false,
+      "description": "Intervention patronale au titre-repas"
+    },
+    "cb8": {
+      "displayName": "Autres avantages",
+      "entity": "manual",
+      "field": null,
+      "type": "checkbox",
+      "required": false,
+      "description": "Cocher si autres avantages"
+    },
+    "autres_avantage": {
+      "displayName": "Description autres avantages",
+      "entity": "manual",
+      "field": null,
+      "type": "text",
+      "required": false,
+      "description": "Description des autres avantages"
+    },
+    "paiement_le_du_mois": {
+      "displayName": "Date de paiement",
+      "entity": "manual",
+      "field": null,
+      "type": "number",
+      "required": true,
+      "description": "Jour du mois pour le paiement (ex: 25)"
+    },
+    "IBAN": {
+      "displayName": "IBAN",
+      "entity": "manual",
+      "field": null,
+      "type": "string",
+      "required": true,
+      "description": "Numéro IBAN du compte bancaire"
+    },
+    "BIC": {
+      "displayName": "BIC",
+      "entity": "manual",
+      "field": null,
+      "type": "string",
+      "required": true,
+      "description": "Code BIC de la banque"
+    },
+    "cp": {
+      "displayName": "Commission paritaire",
+      "entity": "manual",
+      "field": null,
+      "type": "string",
+      "required": true,
+      "description": "Nom de la commission paritaire"
+    },
+    "n_cp": {
+      "displayName": "Numéro commission paritaire",
+      "entity": "manual",
+      "field": null,
+      "type": "string",
+      "required": true,
+      "description": "Numéro de la commission paritaire"
+    },
+    "art13": {
+      "displayName": "Article 13 - Clauses supplémentaires",
+      "entity": "manual",
+      "field": null,
+      "type": "text",
+      "required": false,
+      "description": "Clauses supplémentaires convenues"
+    },
+    "fait_a": {
+      "displayName": "Lieu de signature",
+      "entity": "manual",
+      "field": null,
+      "type": "string",
+      "required": true,
+      "description": "Lieu où le contrat est signé"
+    },
+    "date_contrat": {
+      "displayName": "Date de signature",
+      "entity": "manual",
+      "field": null,
+      "type": "date",
+      "required": true,
+      "description": "Date de signature du contrat"
+    }
+  }
+}
