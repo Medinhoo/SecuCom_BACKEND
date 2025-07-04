@@ -1,13 +1,13 @@
 package com.socialsecretariat.espacepartage.controller;
 
-import com.socialsecretariat.espacepartage.dto.DocumentGenerationRequestDto;
-import com.socialsecretariat.espacepartage.dto.DocumentGenerationResponseDto;
-import com.socialsecretariat.espacepartage.dto.DocumentTemplateDto;
-import com.socialsecretariat.espacepartage.dto.TemplateVariableDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.socialsecretariat.espacepartage.dto.*;
 import com.socialsecretariat.espacepartage.model.DocumentGeneration;
 import com.socialsecretariat.espacepartage.model.User;
 import com.socialsecretariat.espacepartage.service.DocumentGenerationService;
 import com.socialsecretariat.espacepartage.service.DocumentTemplateService;
+import com.socialsecretariat.espacepartage.service.EntityMetadataService;
+import com.socialsecretariat.espacepartage.service.TemplateAnalysisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
@@ -19,13 +19,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import com.socialsecretariat.espacepartage.service.UserService;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,6 +42,9 @@ public class DocumentController {
     private final DocumentTemplateService documentTemplateService;
     private final DocumentGenerationService documentGenerationService;
     private final UserService userService;
+    private final TemplateAnalysisService templateAnalysisService;
+    private final EntityMetadataService entityMetadataService;
+    private final ObjectMapper objectMapper;
 
     
     @GetMapping("/templates")
@@ -196,6 +203,93 @@ public class DocumentController {
             return ResponseEntity.internalServerError().build();
         }
     }
+    
+    // ===== NOUVEAUX ENDPOINTS POUR LA CRÉATION DE TEMPLATES =====
+    
+    @PostMapping("/templates/analyze")
+    public ResponseEntity<?> analyzeTemplate(@RequestParam("file") MultipartFile file) {
+        try {
+            if (!templateAnalysisService.isValidDocxFile(file)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Le fichier doit être au format DOCX"));
+            }
+            
+            TemplateAnalysisResult result = templateAnalysisService.extractVariablesFromDocx(file);
+            return ResponseEntity.ok(result);
+            
+        } catch (IOException e) {
+            log.error("Erreur lors de l'analyse du template", e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Erreur lors de l'analyse du fichier: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("Erreur inattendue lors de l'analyse du template", e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Erreur inattendue: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/templates/metadata")
+    public ResponseEntity<Map<String, List<EntityFieldInfo>>> getEntityMetadata() {
+        Map<String, List<EntityFieldInfo>> metadata = new HashMap<>();
+        metadata.put("Company", entityMetadataService.getCompanyFields());
+        metadata.put("Collaborator", entityMetadataService.getCollaboratorFields());
+        return ResponseEntity.ok(metadata);
+    }
+    
+    @GetMapping("/templates/check-name/{name}")
+    public ResponseEntity<Map<String, Boolean>> checkTemplateName(@PathVariable String name) {
+        boolean available = documentTemplateService.isTemplateNameAvailable(name);
+        return ResponseEntity.ok(Map.of("available", available));
+    }
+    
+    @PostMapping("/templates/create")
+    public ResponseEntity<?> createTemplate(
+            @RequestParam("templateName") String templateName,
+            @RequestParam("displayName") String displayName,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam("docxFile") MultipartFile docxFile,
+            @RequestParam("mappings") String mappingsJson) {
+        
+        try {
+            // Validation du fichier
+            if (!templateAnalysisService.isValidDocxFile(docxFile)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Le fichier doit être au format DOCX"));
+            }
+            
+            // Parse des mappings JSON
+            List<VariableMapping> mappings = objectMapper.readValue(mappingsJson, 
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, VariableMapping.class));
+            
+            // Créer la requête
+            CreateTemplateRequest request = new CreateTemplateRequest();
+            request.setTemplateName(templateName);
+            request.setDisplayName(displayName);
+            request.setDescription(description);
+            request.setDocxFile(docxFile);
+            request.setMappings(mappings);
+            
+            // Créer le template
+            DocumentTemplateDto createdTemplate = documentTemplateService.createTemplateFromMapping(request);
+            
+            return ResponseEntity.ok(createdTemplate);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Erreur de validation lors de la création du template: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        } catch (IOException e) {
+            log.error("Erreur I/O lors de la création du template", e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Erreur lors de la sauvegarde: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("Erreur inattendue lors de la création du template", e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Erreur inattendue: " + e.getMessage()));
+        }
+    }
+    
+    // ===== FIN NOUVEAUX ENDPOINTS =====
     
        /**
      * Get current user ID from security context

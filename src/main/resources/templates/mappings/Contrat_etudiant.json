@@ -1,0 +1,391 @@
+{
+  "templateName" : "Contrat_etudiant",
+  "displayName" : "Contrat etudiant",
+  "description" : "",
+  "variables" : {
+    "autre_repos" : {
+      "displayName" : "Autre repos",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "avantages" : {
+      "displayName" : "Avantages",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "BIC" : {
+      "displayName" : "BIC",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "cp" : {
+      "displayName" : "Cp",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "cp_entreprise" : {
+      "displayName" : "Cp entreprise",
+      "entity" : "Company",
+      "field" : "",
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "cp_travailleur" : {
+      "displayName" : "Cp travailleur",
+      "entity" : "Collaborator",
+      "field" : "jointCommittee",
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "d_a" : {
+      "displayName" : "D a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "d_de" : {
+      "displayName" : "D de",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "date_contrat" : {
+      "displayName" : "Date contrat",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "date",
+      "required" : false,
+      "description" : ""
+    },
+    "date_debut" : {
+      "displayName" : "Date debut",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "date",
+      "required" : false,
+      "description" : ""
+    },
+    "date_fin" : {
+      "displayName" : "Date fin",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "date",
+      "required" : false,
+      "description" : ""
+    },
+    "date_naissance" : {
+      "displayName" : "Date naissance",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "de_l_heure_par_mois" : {
+      "displayName" : "De l heure par mois",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "duree_heures_semaine" : {
+      "displayName" : "Duree heures semaine",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "e_a" : {
+      "displayName" : "E a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "e_de" : {
+      "displayName" : "E de",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "entreprise" : {
+      "displayName" : "Entreprise",
+      "entity" : "Company",
+      "field" : "name",
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "fait_a" : {
+      "displayName" : "Fait a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "fonction_travailleur" : {
+      "displayName" : "Fonction travailleur",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "IBAN" : {
+      "displayName" : "IBAN",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "j_a" : {
+      "displayName" : "J a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "j_de" : {
+      "displayName" : "J de",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "l_a" : {
+      "displayName" : "L a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "l_de" : {
+      "displayName" : "L de",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "lieu_naissance" : {
+      "displayName" : "Lieu naissance",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "lieu_travail" : {
+      "displayName" : "Lieu travail",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "m_a" : {
+      "displayName" : "M a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "m_de" : {
+      "displayName" : "M de",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "n_cp" : {
+      "displayName" : "N cp",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "n_entreprise" : {
+      "displayName" : "N entreprise",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "n_travailleur" : {
+      "displayName" : "N travailleur",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "paiement_le_du_mois" : {
+      "displayName" : "Paiement le du mois",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "remuneration" : {
+      "displayName" : "Remuneration",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "repos2_a" : {
+      "displayName" : "Repos2 a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "repos2_de" : {
+      "displayName" : "Repos2 de",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "repos_a" : {
+      "displayName" : "Repos a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "repos_de" : {
+      "displayName" : "Repos de",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "representant" : {
+      "displayName" : "Representant",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "rue_entreprise" : {
+      "displayName" : "Rue entreprise",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "rue_travailleur" : {
+      "displayName" : "Rue travailleur",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "s_a" : {
+      "displayName" : "S a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "s_de" : {
+      "displayName" : "S de",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "taches_travailleur" : {
+      "displayName" : "Taches travailleur",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "travailleur" : {
+      "displayName" : "Travailleur",
+      "entity" : "Collaborator",
+      "field" : "lastName",
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "v_a" : {
+      "displayName" : "V a",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "v_de" : {
+      "displayName" : "V de",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "ville_entreprise" : {
+      "displayName" : "Ville entreprise",
+      "entity" : "manual",
+      "field" : null,
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    },
+    "ville_travailleur" : {
+      "displayName" : "Ville travailleur",
+      "entity" : "Company",
+      "field" : "address.city",
+      "type" : "string",
+      "required" : false,
+      "description" : ""
+    }
+  }
+}
