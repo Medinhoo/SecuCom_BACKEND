@@ -84,7 +84,16 @@ public class DocumentGenerationService {
                 // Update generation record
                 generation.setGeneratedFileName(generatedFileName);
                 generation.setGeneratedFilePath(Paths.get(outputPath, generatedFileName).toString());
-                generation.setPdfFilePath(Paths.get(outputPath, pdfFileName).toString());
+                
+                // Check if PDF conversion was successful
+                if (pdfFileName.endsWith(".pdf") && Files.exists(Paths.get(outputPath, pdfFileName))) {
+                    generation.setPdfFilePath(Paths.get(outputPath, pdfFileName).toString());
+                    log.debug("PDF file successfully created and stored at: {}", generation.getPdfFilePath());
+                } else {
+                    // PDF conversion failed - this should cause the generation to fail
+                    throw new RuntimeException("PDF conversion failed. LibreOffice may not be installed or accessible. Generated DOCX file is available but PDF conversion is required.");
+                }
+                
                 generation.setStatus(DocumentGeneration.GenerationStatus.COMPLETED);
                 
                 generation = documentGenerationRepository.save(generation);
@@ -358,6 +367,17 @@ public class DocumentGenerationService {
                 generation.getCollaborator().getFirstName() + " " + generation.getCollaborator().getLastName() : null);
         dto.setGeneratedByName(generation.getGeneratedBy().getUsername());
         dto.setGeneratedFileName(generation.getGeneratedFileName());
+        dto.setGeneratedFilePath(generation.getGeneratedFilePath());
+        dto.setPdfFilePath(generation.getPdfFilePath());
+        
+        // Calculer le nom du fichier PDF à partir du chemin
+        if (generation.getPdfFilePath() != null) {
+            Path pdfPath = Paths.get(generation.getPdfFilePath());
+            dto.setPdfFileName(pdfPath.getFileName().toString());
+        } else {
+            dto.setPdfFileName(null);
+        }
+        
         dto.setStatus(generation.getStatus());
         dto.setErrorMessage(generation.getErrorMessage());
         dto.setCreatedAt(generation.getCreatedAt());

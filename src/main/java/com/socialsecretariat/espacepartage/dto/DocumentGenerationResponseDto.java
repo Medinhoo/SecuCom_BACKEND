@@ -20,6 +20,9 @@ public class DocumentGenerationResponseDto {
     private String collaboratorName;
     private String generatedByName;
     private String generatedFileName;
+    private String generatedFilePath;
+    private String pdfFilePath;
+    private String pdfFileName;
     private DocumentGeneration.GenerationStatus status;
     private String errorMessage;
     private LocalDateTime createdAt;
