@@ -8,6 +8,8 @@ import com.socialsecretariat.espacepartage.service.DocumentGenerationService;
 import com.socialsecretariat.espacepartage.service.DocumentTemplateService;
 import com.socialsecretariat.espacepartage.service.EntityMetadataService;
 import com.socialsecretariat.espacepartage.service.TemplateAnalysisService;
+import com.socialsecretariat.espacepartage.service.EmailService;
+import com.socialsecretariat.espacepartage.service.EmailTemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
@@ -44,6 +46,8 @@ public class DocumentController {
     private final UserService userService;
     private final TemplateAnalysisService templateAnalysisService;
     private final EntityMetadataService entityMetadataService;
+    private final EmailService emailService;
+    private final EmailTemplateService emailTemplateService;
     private final ObjectMapper objectMapper;
 
     
@@ -248,7 +252,12 @@ public class DocumentController {
             @RequestParam("displayName") String displayName,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam("docxFile") MultipartFile docxFile,
-            @RequestParam("mappings") String mappingsJson) {
+            @RequestParam("mappings") String mappingsJson,
+            @RequestParam(value = "emailEnabled", required = false) Boolean emailEnabled,
+            @RequestParam(value = "defaultEmailSubject", required = false) String defaultEmailSubject,
+            @RequestParam(value = "defaultEmailBody", required = false) String defaultEmailBody,
+            @RequestParam(value = "defaultRecipients", required = false) String defaultRecipients,
+            @RequestParam(value = "defaultCcRecipients", required = false) String defaultCcRecipients) {
         
         try {
             // Validation du fichier
@@ -268,6 +277,13 @@ public class DocumentController {
             request.setDescription(description);
             request.setDocxFile(docxFile);
             request.setMappings(mappings);
+            
+            // Ajouter les paramètres email
+            request.setEmailEnabled(emailEnabled);
+            request.setDefaultEmailSubject(defaultEmailSubject);
+            request.setDefaultEmailBody(defaultEmailBody);
+            request.setDefaultRecipients(defaultRecipients);
+            request.setDefaultCcRecipients(defaultCcRecipients);
             
             // Créer le template
             DocumentTemplateDto createdTemplate = documentTemplateService.createTemplateFromMapping(request);
@@ -290,6 +306,206 @@ public class DocumentController {
     }
     
     // ===== FIN NOUVEAUX ENDPOINTS =====
+    
+    // ===== ENDPOINTS EMAIL =====
+    
+    @GetMapping("/generations/{generationId}/email-template")
+    public ResponseEntity<EmailTemplateDto> getEmailTemplate(@PathVariable UUID generationId) {
+        try {
+            // Get the document generation
+            Optional<DocumentGenerationResponseDto> generationOpt = documentGenerationService.getGenerationById(generationId);
+            if (generationOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            DocumentGenerationResponseDto generationDto = generationOpt.get();
+            
+            // Get the template by name to access email configuration
+            Optional<DocumentTemplateDto> templateOpt = documentTemplateService.getTemplateByName(generationDto.getTemplateName());
+            
+            EmailTemplateDto emailTemplate = new EmailTemplateDto();
+            
+            if (templateOpt.isPresent()) {
+                DocumentTemplateDto template = templateOpt.get();
+                
+                // Use template configuration if available
+                emailTemplate.setEmailEnabled(template.getEmailEnabled() != null ? template.getEmailEnabled() : true);
+                
+                // Process subject with variables
+                String subject = template.getDefaultEmailSubject();
+                if (subject == null || subject.isEmpty()) {
+                    subject = "Document généré - " + generationDto.getTemplateDisplayName();
+                } else {
+                    // Replace variables in subject
+                    subject = processEmailVariables(subject, generationDto);
+                }
+                emailTemplate.setDefaultSubject(subject);
+                
+                // Process body with variables
+                String body = template.getDefaultEmailBody();
+                if (body == null || body.isEmpty()) {
+                    body = "Bonjour,\n\nVeuillez trouver ci-joint le document généré.\n\nCordialement";
+                } else {
+                    // Replace variables in body
+                    body = processEmailVariables(body, generationDto);
+                }
+                emailTemplate.setDefaultBody(body);
+                
+                // Parse recipients from JSON
+                try {
+                    if (template.getDefaultRecipients() != null && !template.getDefaultRecipients().isEmpty()) {
+                        List<String> recipients = objectMapper.readValue(template.getDefaultRecipients(), 
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                        emailTemplate.setDefaultRecipients(recipients);
+                    } else {
+                        emailTemplate.setDefaultRecipients(List.of());
+                    }
+                } catch (Exception e) {
+                    log.warn("Error parsing default recipients JSON: {}", template.getDefaultRecipients(), e);
+                    emailTemplate.setDefaultRecipients(List.of());
+                }
+                
+                // Parse CC recipients from JSON
+                try {
+                    if (template.getDefaultCcRecipients() != null && !template.getDefaultCcRecipients().isEmpty()) {
+                        List<String> ccRecipients = objectMapper.readValue(template.getDefaultCcRecipients(), 
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                        emailTemplate.setDefaultCcRecipients(ccRecipients);
+                    } else {
+                        emailTemplate.setDefaultCcRecipients(List.of());
+                    }
+                } catch (Exception e) {
+                    log.warn("Error parsing default CC recipients JSON: {}", template.getDefaultCcRecipients(), e);
+                    emailTemplate.setDefaultCcRecipients(List.of());
+                }
+            } else {
+                // Fallback if template not found
+                emailTemplate.setEmailEnabled(true);
+                emailTemplate.setDefaultSubject("Document généré - " + generationDto.getTemplateDisplayName());
+                emailTemplate.setDefaultBody("Bonjour,\n\nVeuillez trouver ci-joint le document généré.\n\nCordialement");
+                emailTemplate.setDefaultRecipients(List.of());
+                emailTemplate.setDefaultCcRecipients(List.of());
+            }
+            
+            return ResponseEntity.ok(emailTemplate);
+            
+        } catch (Exception e) {
+            log.error("Error getting email template for generation: {}", generationId, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    @PostMapping("/send-email")
+    public ResponseEntity<SendEmailResponse> sendDocumentEmail(@RequestBody SendEmailRequest request) {
+        try {
+            log.info("Sending email for document generation: {}", request.getDocumentGenerationId());
+            
+            // Validate request
+            if (request.getRecipients() == null || request.getRecipients().isEmpty()) {
+                SendEmailResponse errorResponse = new SendEmailResponse();
+                errorResponse.setSuccess(false);
+                errorResponse.setMessage("Au moins un destinataire est requis");
+                return ResponseEntity.status(400).body(errorResponse);
+            }
+            
+            // Get the document generation
+            Optional<DocumentGenerationResponseDto> generationOpt = documentGenerationService.getGenerationById(request.getDocumentGenerationId());
+            if (generationOpt.isEmpty()) {
+                SendEmailResponse errorResponse = new SendEmailResponse();
+                errorResponse.setSuccess(false);
+                errorResponse.setMessage("Document generation not found");
+                return ResponseEntity.status(404).body(errorResponse);
+            }
+            
+            DocumentGenerationResponseDto generation = generationOpt.get();
+            
+            // Check if generation is completed
+            if (generation.getStatus() != DocumentGeneration.GenerationStatus.COMPLETED) {
+                SendEmailResponse errorResponse = new SendEmailResponse();
+                errorResponse.setSuccess(false);
+                errorResponse.setMessage("Le document n'est pas encore prêt");
+                return ResponseEntity.status(400).body(errorResponse);
+            }
+            
+            // Prepare attachments
+            List<File> attachments = List.of();
+            
+            if (request.isIncludePdf() && generation.getPdfFilePath() != null) {
+                File pdfFile = new File(generation.getPdfFilePath());
+                if (pdfFile.exists()) {
+                    attachments = new java.util.ArrayList<>(attachments);
+                    attachments.add(pdfFile);
+                }
+            }
+            
+            if (request.isIncludeDocx() && generation.getGeneratedFilePath() != null) {
+                File docxFile = new File(generation.getGeneratedFilePath());
+                if (docxFile.exists()) {
+                    if (attachments.isEmpty()) {
+                        attachments = new java.util.ArrayList<>();
+                    } else {
+                        attachments = new java.util.ArrayList<>(attachments);
+                    }
+                    attachments.add(docxFile);
+                }
+            }
+            
+            // If no specific attachments requested, default to PDF
+            if (attachments.isEmpty() && generation.getPdfFilePath() != null) {
+                File pdfFile = new File(generation.getPdfFilePath());
+                if (pdfFile.exists()) {
+                    attachments = List.of(pdfFile);
+                }
+            }
+            
+            // Send email
+            SendEmailResponse response = emailService.sendDocumentEmail(request, attachments);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error sending email for generation: {}", request.getDocumentGenerationId(), e);
+            
+            SendEmailResponse errorResponse = new SendEmailResponse();
+            errorResponse.setSuccess(false);
+            errorResponse.setMessage("Erreur lors de l'envoi de l'email: " + e.getMessage());
+            
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+    
+    // ===== FIN ENDPOINTS EMAIL =====
+    
+    /**
+     * Process email template variables
+     */
+    private String processEmailVariables(String template, DocumentGenerationResponseDto generation) {
+        if (template == null) {
+            return "";
+        }
+        
+        String processed = template;
+        
+        // Replace common variables
+        processed = processed.replace("{templateDisplayName}", 
+            generation.getTemplateDisplayName() != null ? generation.getTemplateDisplayName() : "");
+        processed = processed.replace("{documentName}", 
+            generation.getGeneratedFileName() != null ? generation.getGeneratedFileName() : "");
+        processed = processed.replace("{companyName}", 
+            generation.getCompanyName() != null ? generation.getCompanyName() : "");
+        processed = processed.replace("{collaboratorName}", 
+            generation.getCollaboratorName() != null ? generation.getCollaboratorName() : "");
+        processed = processed.replace("{generatedByName}", 
+            generation.getGeneratedByName() != null ? generation.getGeneratedByName() : "");
+        
+        // Format creation date
+        if (generation.getCreatedAt() != null) {
+            processed = processed.replace("{generationDate}", 
+                generation.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        }
+        
+        return processed;
+    }
     
        /**
      * Get current user ID from security context

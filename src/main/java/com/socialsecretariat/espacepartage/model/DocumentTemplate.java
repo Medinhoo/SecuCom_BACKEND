@@ -44,6 +44,22 @@ public class DocumentTemplate {
     @Column(nullable = false)
     private boolean active = true;
     
+    // Email configuration fields
+    @Column(name = "email_enabled")
+    private Boolean emailEnabled = true;
+    
+    @Column(name = "default_email_subject")
+    private String defaultEmailSubject;
+    
+    @Column(name = "default_email_body", columnDefinition = "TEXT")
+    private String defaultEmailBody;
+    
+    @Column(name = "default_recipients", columnDefinition = "TEXT")
+    private String defaultRecipients; // JSON array of recipient types
+    
+    @Column(name = "default_cc_recipients", columnDefinition = "TEXT")
+    private String defaultCcRecipients; // JSON array of CC recipient types
+    
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

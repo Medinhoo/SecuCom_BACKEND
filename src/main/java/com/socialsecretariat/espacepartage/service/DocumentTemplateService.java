@@ -159,6 +159,13 @@ public class DocumentTemplateService {
             template.setMappingConfigPath(jsonConfigPath);
             template.setActive(true);
             
+            // Set email configuration
+            template.setEmailEnabled(request.getEmailEnabled() != null ? request.getEmailEnabled() : true);
+            template.setDefaultEmailSubject(request.getDefaultEmailSubject());
+            template.setDefaultEmailBody(request.getDefaultEmailBody());
+            template.setDefaultRecipients(request.getDefaultRecipients());
+            template.setDefaultCcRecipients(request.getDefaultCcRecipients());
+            
             template = documentTemplateRepository.save(template);
             
             log.info("Template créé avec succès: {} (ID: {})", template.getName(), template.getId());
@@ -222,6 +229,13 @@ public class DocumentTemplateService {
         dto.setActive(template.isActive());
         dto.setCreatedAt(template.getCreatedAt());
         dto.setUpdatedAt(template.getUpdatedAt());
+        
+        // Email configuration fields
+        dto.setEmailEnabled(template.getEmailEnabled());
+        dto.setDefaultEmailSubject(template.getDefaultEmailSubject());
+        dto.setDefaultEmailBody(template.getDefaultEmailBody());
+        dto.setDefaultRecipients(template.getDefaultRecipients());
+        dto.setDefaultCcRecipients(template.getDefaultCcRecipients());
         
         // Load variables
         dto.setVariables(loadVariablesFromConfig(template.getMappingConfigPath()));

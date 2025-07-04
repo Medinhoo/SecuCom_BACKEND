@@ -16,4 +16,11 @@ public class CreateTemplateRequest {
     private String description;
     private MultipartFile docxFile;
     private List<VariableMapping> mappings;
+    
+    // Email configuration fields
+    private Boolean emailEnabled;
+    private String defaultEmailSubject;
+    private String defaultEmailBody;
+    private String defaultRecipients; // JSON string
+    private String defaultCcRecipients; // JSON string
 }

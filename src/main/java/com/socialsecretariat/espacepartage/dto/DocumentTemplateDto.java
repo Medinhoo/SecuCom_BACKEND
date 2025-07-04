@@ -21,4 +21,11 @@ public class DocumentTemplateDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<TemplateVariableDto> variables;
+    
+    // Email configuration fields
+    private Boolean emailEnabled;
+    private String defaultEmailSubject;
+    private String defaultEmailBody;
+    private String defaultRecipients;
+    private String defaultCcRecipients;
 }
