@@ -1,8 +1,10 @@
 package com.socialsecretariat.espacepartage.controller;
 
 import com.socialsecretariat.espacepartage.dto.CompanyDto;
+import com.socialsecretariat.espacepartage.dto.CompanyLookupDto;
 import com.socialsecretariat.espacepartage.dto.auth.MessageResponse;
 import com.socialsecretariat.espacepartage.service.CompanyService;
+import com.socialsecretariat.espacepartage.service.CompanyLookupService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +24,11 @@ import java.util.UUID;
 public class CompanyController {
 
     private final CompanyService companyService;
+    private final CompanyLookupService companyLookupService;
 
-    public CompanyController(CompanyService companyService) {
+    public CompanyController(CompanyService companyService, CompanyLookupService companyLookupService) {
         this.companyService = companyService;
+        this.companyLookupService = companyLookupService;
     }
 
     /**
@@ -132,5 +136,44 @@ public class CompanyController {
     public ResponseEntity<Boolean> checkVatNumberExists(@PathVariable String vatNumber) {
         boolean exists = companyService.existsByVatNumber(vatNumber);
         return ResponseEntity.ok(exists);
+    }
+
+    /**
+     * Looks up company information from CBE API by BCE number.
+     * Accessible to administrators and secretariat employees.
+     * 
+     * @param bceNumber The BCE number to lookup
+     * @return Company information from CBE database
+     */
+    @GetMapping("/lookup/bce/{bceNumber}")
+    public ResponseEntity<CompanyLookupDto> lookupByBce(@PathVariable String bceNumber) {
+        CompanyLookupDto company = companyLookupService.findByBceNumber(bceNumber);
+        return ResponseEntity.ok(company);
+    }
+
+    /**
+     * Looks up company information from CBE API by VAT number.
+     * Accessible to administrators and secretariat employees.
+     * 
+     * @param vatNumber The VAT number to lookup
+     * @return Company information from CBE database
+     */
+    @GetMapping("/lookup/vat/{vatNumber}")
+    public ResponseEntity<CompanyLookupDto> lookupByVat(@PathVariable String vatNumber) {
+        CompanyLookupDto company = companyLookupService.findByVatNumber(vatNumber);
+        return ResponseEntity.ok(company);
+    }
+
+    /**
+     * Searches companies in CBE API by name.
+     * Accessible to administrators and secretariat employees.
+     * 
+     * @param name The company name to search for
+     * @return List of companies matching the search criteria
+     */
+    @GetMapping("/lookup/search")
+    public ResponseEntity<List<CompanyLookupDto>> searchByName(@RequestParam String name) {
+        List<CompanyLookupDto> companies = companyLookupService.searchByName(name);
+        return ResponseEntity.ok(companies);
     }
 }
