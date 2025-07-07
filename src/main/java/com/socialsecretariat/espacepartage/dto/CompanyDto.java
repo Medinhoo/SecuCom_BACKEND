@@ -1,5 +1,6 @@
 package com.socialsecretariat.espacepartage.dto;
 
+import com.socialsecretariat.espacepartage.model.Address;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -60,4 +61,6 @@ public class CompanyDto {
     private String subscriptionFormula; // formuleSouscrite
 
     private String declarationFrequency; // frequenceDeclarationPP
+
+    private Address address; // Adresse de l'entreprise
 }
