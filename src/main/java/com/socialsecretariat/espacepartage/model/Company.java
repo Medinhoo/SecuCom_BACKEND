@@ -127,6 +127,10 @@ public class Company {
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     private Set<Collaborator> collaborators = new HashSet<>();
 
+    // Champ pour indiquer si l'entreprise a confirmé ses données
+    @Column(name = "is_company_confirmed", nullable = false, columnDefinition = "boolean default false")
+    private boolean isCompanyConfirmed = false;
+
     public void addContact(CompanyContact contact) {
         contacts.add(contact);
         contact.setCompany(this);

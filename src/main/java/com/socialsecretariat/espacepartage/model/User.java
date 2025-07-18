@@ -74,7 +74,7 @@ public class User {
 
     @Column(name = "account_status")
     @Enumerated(EnumType.STRING)
-    private AccountStatus accountStatus = AccountStatus.PENDING;
+    private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
     public enum Role {
         ROLE_COMPANY,

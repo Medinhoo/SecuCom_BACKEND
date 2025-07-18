@@ -1,6 +1,8 @@
 package com.socialsecretariat.espacepartage.controller;
 
 import com.socialsecretariat.espacepartage.dto.CompanyDto;
+import com.socialsecretariat.espacepartage.dto.CompanyUpdateResponseDto;
+import com.socialsecretariat.espacepartage.dto.CompanyConfirmationHistoryDto;
 import com.socialsecretariat.espacepartage.dto.CompanyLookupDto;
 import com.socialsecretariat.espacepartage.dto.auth.MessageResponse;
 import com.socialsecretariat.espacepartage.service.CompanyService;
@@ -8,6 +10,7 @@ import com.socialsecretariat.espacepartage.service.CompanyLookupService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,17 +50,17 @@ public class CompanyController {
 
     /**
      * Updates an existing company's information.
-     * Only accessible to administrators.
+     * Returns additional metadata about confirmation requirements.
      * 
      * @param id         The UUID of the company to update
      * @param companyDto The updated company information
-     * @return The updated company as a DTO
+     * @return The updated company as a DTO with confirmation metadata
      */
     @PutMapping("/{id}")
-    public ResponseEntity<CompanyDto> updateCompany(
+    public ResponseEntity<CompanyUpdateResponseDto> updateCompany(
             @PathVariable UUID id,
             @Valid @RequestBody CompanyDto companyDto) {
-        CompanyDto updatedCompany = companyService.updateCompany(id, companyDto);
+        CompanyUpdateResponseDto updatedCompany = companyService.updateCompany(id, companyDto);
         return ResponseEntity.ok(updatedCompany);
     }
 
@@ -175,5 +178,32 @@ public class CompanyController {
     public ResponseEntity<List<CompanyLookupDto>> searchByName(@RequestParam String name) {
         List<CompanyLookupDto> companies = companyLookupService.searchByName(name);
         return ResponseEntity.ok(companies);
+    }
+
+    /**
+     * Confirms company data. Only accessible to company contacts of the specific company.
+     * 
+     * @param id The UUID of the company to confirm
+     * @return The updated company as a DTO with confirmation status
+     */
+    @PutMapping("/{id}/confirm")
+    @PreAuthorize("hasRole('COMPANY')")
+    public ResponseEntity<CompanyDto> confirmCompanyData(@PathVariable UUID id) {
+        CompanyDto confirmedCompany = companyService.confirmCompanyData(id);
+        return ResponseEntity.ok(confirmedCompany);
+    }
+
+    /**
+     * Retrieves the confirmation history for a specific company.
+     * Accessible to administrators and secretariat employees.
+     * 
+     * @param id The UUID of the company
+     * @return List of confirmation history entries
+     */
+    @GetMapping("/{id}/confirmation-history")
+    @PreAuthorize("hasRole('SECRETARIAT') or hasRole('ADMIN')")
+    public ResponseEntity<List<CompanyConfirmationHistoryDto>> getConfirmationHistory(@PathVariable UUID id) {
+        List<CompanyConfirmationHistoryDto> history = companyService.getConfirmationHistory(id);
+        return ResponseEntity.ok(history);
     }
 }

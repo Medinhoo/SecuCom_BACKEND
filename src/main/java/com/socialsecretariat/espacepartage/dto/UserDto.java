@@ -31,4 +31,5 @@ public class UserDto {
     private String permissions;
     private UUID companyId;
     private String companyName;
+    private Boolean companyConfirmed;
 }

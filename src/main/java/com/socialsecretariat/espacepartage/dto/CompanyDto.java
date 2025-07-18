@@ -30,10 +30,8 @@ public class CompanyDto {
 
     private String workAccidentInsurance; // assuranceAccidentDeTravail
 
-    @NotBlank(message = "BCE number is required")
     private String bceNumber; // numeroBCE
 
-    @NotBlank(message = "ONSS number is required")
     private String onssNumber; // numeroONSS
 
     private String legalForm; // formeJuridique
@@ -63,4 +61,6 @@ public class CompanyDto {
     private String declarationFrequency; // frequenceDeclarationPP
 
     private Address address; // Adresse de l'entreprise
+
+    private boolean isCompanyConfirmed; // Indique si l'entreprise a confirmé ses données
 }

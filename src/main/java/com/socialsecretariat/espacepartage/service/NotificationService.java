@@ -278,6 +278,38 @@ public class NotificationService {
     }
 
     /**
+     * Create notification for company data confirmation by company contact
+     */
+    public void notifySecretariatOfCompanyConfirmation(UUID companyId, String companyName) {
+        log.debug("Creating company confirmation notification for company: {}", companyName);
+        
+        String message = String.format("L'entreprise '%s' a confirmé ses données.", companyName);
+        
+        // Notify secretariat users
+        List<User> secretariatUsers = userRepository.findByRolesContaining(User.Role.ROLE_SECRETARIAT);
+        for (User user : secretariatUsers) {
+            createNotification(user.getId(), message, NotificationType.COMPANY_DATA_CONFIRMED, companyId);
+        }
+
+        // Notify admin users
+        List<User> adminUsers = userRepository.findByRolesContaining(User.Role.ROLE_ADMIN);
+        for (User user : adminUsers) {
+            createNotification(user.getId(), message, NotificationType.COMPANY_DATA_CONFIRMED, companyId);
+        }
+    }
+
+    /**
+     * Create notification for company contact to reconfirm data after secretariat modification
+     */
+    public void notifyCompanyContactForReconfirmation(UUID contactId, UUID companyId, String companyName) {
+        log.debug("Creating reconfirmation notification for company contact: {} for company: {}", contactId, companyName);
+        
+        String message = String.format("Les données de votre entreprise '%s' ont été modifiées par le secrétariat social. Veuillez confirmer les nouvelles informations.", companyName);
+        
+        createNotification(contactId, message, NotificationType.COMPANY_DATA_RECONFIRMATION_REQUIRED, companyId);
+    }
+
+    /**
      * Convert Notification entity to DTO
      */
     private NotificationDto convertToDto(Notification notification) {

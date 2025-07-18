@@ -51,7 +51,9 @@ public class Notification {
         DIMONA_CREATED,
         DIMONA_STATUS_CHANGED,
         COLLABORATOR_CREATED,
-        COMPANY_COMPLETED
+        COMPANY_COMPLETED,
+        COMPANY_DATA_CONFIRMED,
+        COMPANY_DATA_RECONFIRMATION_REQUIRED
     }
 
     // Helper method to mark as read

@@ -486,6 +486,7 @@ public class UserService {
             if (contact.getCompany() != null) {
                 dto.setCompanyId(contact.getCompany().getId());
                 dto.setCompanyName(contact.getCompany().getName());
+                dto.setCompanyConfirmed(contact.getCompany().isCompanyConfirmed());
             }
         }
 

@@ -1,11 +1,17 @@
 package com.socialsecretariat.espacepartage.service;
 
 import com.socialsecretariat.espacepartage.dto.CompanyDto;
+import com.socialsecretariat.espacepartage.dto.CompanyUpdateResponseDto;
+import com.socialsecretariat.espacepartage.dto.CompanyConfirmationHistoryDto;
 import com.socialsecretariat.espacepartage.model.Company;
+import com.socialsecretariat.espacepartage.model.CompanyContact;
+import com.socialsecretariat.espacepartage.model.CompanyConfirmationHistory;
 import com.socialsecretariat.espacepartage.model.Collaborator;
 import com.socialsecretariat.espacepartage.model.Dimona;
 import com.socialsecretariat.espacepartage.model.User;
 import com.socialsecretariat.espacepartage.repository.CompanyRepository;
+import com.socialsecretariat.espacepartage.repository.CompanyContactRepository;
+import com.socialsecretariat.espacepartage.repository.CompanyConfirmationHistoryRepository;
 import com.socialsecretariat.espacepartage.repository.DimonaRepository;
 import com.socialsecretariat.espacepartage.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,13 +30,19 @@ import java.util.stream.Collectors;
 public class CompanyService {
 
     private final CompanyRepository companyRepository;
+    private final CompanyContactRepository companyContactRepository;
+    private final CompanyConfirmationHistoryRepository confirmationHistoryRepository;
     private final DimonaRepository dimonaRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
-    public CompanyService(CompanyRepository companyRepository, DimonaRepository dimonaRepository, 
-                         UserRepository userRepository, NotificationService notificationService) {
+    public CompanyService(CompanyRepository companyRepository, CompanyContactRepository companyContactRepository,
+                         CompanyConfirmationHistoryRepository confirmationHistoryRepository,
+                         DimonaRepository dimonaRepository, UserRepository userRepository, 
+                         NotificationService notificationService) {
         this.companyRepository = companyRepository;
+        this.companyContactRepository = companyContactRepository;
+        this.confirmationHistoryRepository = confirmationHistoryRepository;
         this.dimonaRepository = dimonaRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
@@ -39,53 +51,77 @@ public class CompanyService {
     public CompanyDto createCompany(CompanyDto companyDto) {
         Company company = new Company();
         BeanUtils.copyProperties(companyDto, company);
+        // S'assurer que isCompanyConfirmed est toujours false lors de la création
+        company.setCompanyConfirmed(false);
         Company savedCompany = companyRepository.save(company);
         CompanyDto savedDto = new CompanyDto();
         BeanUtils.copyProperties(savedCompany, savedDto);
         return savedDto;
     }
 
-    public CompanyDto updateCompany(UUID id, CompanyDto companyDto) {
+    public CompanyUpdateResponseDto updateCompany(UUID id, CompanyDto companyDto) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Company not found with id: " + id));
 
-        // Check if company was incomplete before update
-        boolean wasIncomplete = !isCompanyComplete(company);
+        // Get current user from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = null;
+        if (authentication != null && authentication.getName() != null) {
+            String username = authentication.getName();
+            currentUser = userRepository.findByUsername(username).orElse(null);
+        }
 
-        BeanUtils.copyProperties(companyDto, company, "id");
+        boolean wasConfirmed = company.isCompanyConfirmed();
+
+        // Exclure isCompanyConfirmed du BeanUtils.copyProperties pour le gérer manuellement
+        BeanUtils.copyProperties(companyDto, company, "id", "isCompanyConfirmed");
+
+        // Sauvegarder d'abord les modifications
         Company updatedCompany = companyRepository.save(company);
 
-        // Check if company is now complete after update
+        // Vérifier si l'entreprise est complète après la mise à jour
         boolean isNowComplete = isCompanyComplete(updatedCompany);
-
-        // If company was incomplete before and is now complete
-        if (wasIncomplete && isNowComplete) {
-            // Get current user from security context
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.getName() != null) {
-                String username = authentication.getName();
-                User currentUser = userRepository.findByUsername(username).orElse(null);
+        
+        // Logique selon le rôle de l'utilisateur
+        if (currentUser != null) {
+            if (currentUser.hasRole(User.Role.ROLE_SECRETARIAT)) {
+                // Si le secrétariat modifie, TOUJOURS remettre isCompanyConfirmed à false
+                updatedCompany.setCompanyConfirmed(false);
+                updatedCompany = companyRepository.save(updatedCompany);
                 
-                if (currentUser != null) {
-                    // Update user's account status to ACTIVE if it was PENDING
-                    if (currentUser.getAccountStatus() == User.AccountStatus.PENDING) {
-                        currentUser.setAccountStatus(User.AccountStatus.ACTIVE);
-                        userRepository.save(currentUser);
-                    }
-
-                    // Create notification for company completion
-                    notificationService.notifyCompanyCompleted(
-                        updatedCompany.getId(), 
-                        updatedCompany.getName(), 
-                        currentUser.getId()
-                    );
+                // Notifier seulement si l'entreprise était confirmée avant
+                if (wasConfirmed) {
+                    notifyCompanyContactsForReconfirmation(updatedCompany);
                 }
+            } else if (currentUser.hasRole(User.Role.ROLE_COMPANY)) {
+                // Si c'est un CompanyContact, vérifier l'intégrité des données
+                // Si l'entreprise devient incomplète, mettre isCompanyConfirmed à false automatiquement
+                if (!isNowComplete && updatedCompany.isCompanyConfirmed()) {
+                    updatedCompany.setCompanyConfirmed(false);
+                    updatedCompany = companyRepository.save(updatedCompany);
+                }
+                // Note: La confirmation se fera via la modal frontend
+            }
+        } else {
+            // Pour les utilisateurs non authentifiés ou autres rôles
+            // Si l'entreprise devient incomplète, mettre isCompanyConfirmed à false automatiquement
+            if (!isNowComplete && updatedCompany.isCompanyConfirmed()) {
+                updatedCompany.setCompanyConfirmed(false);
+                updatedCompany = companyRepository.save(updatedCompany);
             }
         }
 
-        CompanyDto updatedDto = new CompanyDto();
-        BeanUtils.copyProperties(updatedCompany, updatedDto);
-        return updatedDto;
+        // Create response DTO with metadata
+        CompanyUpdateResponseDto responseDto = new CompanyUpdateResponseDto();
+        BeanUtils.copyProperties(updatedCompany, responseDto);
+
+        // Pour les utilisateurs ROLE_COMPANY : toujours demander confirmation
+        if (currentUser != null && currentUser.hasRole(User.Role.ROLE_COMPANY)) {
+            responseDto.setNeedsConfirmation(true);
+            responseDto.setWasJustCompleted(false); // Pas besoin de cette logique complexe
+        }
+
+        return responseDto;
     }
 
     public CompanyDto getCompanyById(UUID id) {
@@ -140,6 +176,80 @@ public class CompanyService {
 
     public boolean existsByVatNumber(String vatNumber) {
         return companyRepository.existsByVatNumber(vatNumber);
+    }
+
+    /**
+     * Confirme les données d'une entreprise. Accessible uniquement aux CompanyContacts de cette entreprise.
+     */
+    public CompanyDto confirmCompanyData(UUID companyId) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new EntityNotFoundException("Company not found with id: " + companyId));
+
+        // Vérifier que l'utilisateur connecté est bien un CompanyContact de cette entreprise
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getName() != null) {
+            String username = authentication.getName();
+            User currentUser = userRepository.findByUsername(username).orElse(null);
+            
+            if (currentUser != null && isUserCompanyContact(currentUser.getId(), companyId)) {
+                company.setCompanyConfirmed(true);
+                Company savedCompany = companyRepository.save(company);
+                
+                // Enregistrer l'historique de confirmation
+                CompanyConfirmationHistory history = new CompanyConfirmationHistory();
+                history.setCompanyId(companyId);
+                history.setConfirmedByUserId(currentUser.getId());
+                history.setConfirmedByUserName(currentUser.getFirstName() + " " + currentUser.getLastName());
+                confirmationHistoryRepository.save(history);
+                
+                // Notifier le secrétariat social de la confirmation
+                notificationService.notifySecretariatOfCompanyConfirmation(companyId, company.getName());
+                
+                CompanyDto dto = new CompanyDto();
+                BeanUtils.copyProperties(savedCompany, dto);
+                return dto;
+            } else {
+                throw new SecurityException("Only company contacts can confirm company data");
+            }
+        } else {
+            throw new SecurityException("User not authenticated");
+        }
+    }
+
+    /**
+     * Récupère l'historique des confirmations pour une entreprise
+     */
+    public List<CompanyConfirmationHistoryDto> getConfirmationHistory(UUID companyId) {
+        List<CompanyConfirmationHistory> history = confirmationHistoryRepository.findByCompanyIdOrderByConfirmedAtDesc(companyId);
+        return history.stream()
+                .map(h -> {
+                    CompanyConfirmationHistoryDto dto = new CompanyConfirmationHistoryDto();
+                    BeanUtils.copyProperties(h, dto);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Vérifie si un utilisateur est un CompanyContact d'une entreprise donnée
+     */
+    private boolean isUserCompanyContact(UUID userId, UUID companyId) {
+        List<CompanyContact> companyContacts = companyContactRepository.findByCompanyId(companyId);
+        return companyContacts.stream().anyMatch(contact -> contact.getId().equals(userId));
+    }
+
+    /**
+     * Notifie tous les CompanyContacts d'une entreprise qu'ils doivent re-confirmer les données
+     */
+    private void notifyCompanyContactsForReconfirmation(Company company) {
+        List<CompanyContact> companyContacts = companyContactRepository.findByCompanyId(company.getId());
+        for (CompanyContact contact : companyContacts) {
+            notificationService.notifyCompanyContactForReconfirmation(
+                contact.getId(), 
+                company.getId(), 
+                company.getName()
+            );
+        }
     }
 
     /**
