@@ -44,6 +44,10 @@ public class DocumentTemplate {
     @Column(nullable = false)
     private boolean active = true;
     
+    @Enumerated(EnumType.STRING)
+    @Column(name = "document_type", nullable = false)
+    private DocumentType documentType = DocumentType.DOCUMENT;
+    
     // Email configuration fields
     @Column(name = "email_enabled")
     private Boolean emailEnabled = true;
@@ -77,5 +81,12 @@ public class DocumentTemplate {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+    
+    public enum DocumentType {
+        DOCUMENT,
+        CONTRAT,
+        ATTESTATION,
+        CERTIFICAT
     }
 }

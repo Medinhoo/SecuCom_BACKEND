@@ -12,19 +12,21 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DocumentGenerationResponseDto {
+public class DocumentDto {
+    
     private UUID id;
+    private UUID templateId;
     private String templateName;
-    private String templateDisplayName;
+    private UUID companyId;
     private String companyName;
-    private String collaboratorName;
+    private UUID generatedById;
     private String generatedByName;
     private String generatedFileName;
     private String generatedFilePath;
     private String pdfFilePath;
-    private String pdfFileName;
+    private Map<String, String> formData;
     private Document.GenerationStatus status;
     private String errorMessage;
     private LocalDateTime createdAt;
-    private Map<String, String> formData;
+    private String documentType;
 }

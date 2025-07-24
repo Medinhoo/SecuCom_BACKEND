@@ -1,7 +1,8 @@
 package com.socialsecretariat.espacepartage.service;
 
+import com.socialsecretariat.espacepartage.dto.ContratDto;
+import com.socialsecretariat.espacepartage.dto.DocumentDto;
 import com.socialsecretariat.espacepartage.dto.DocumentGenerationRequestDto;
-import com.socialsecretariat.espacepartage.dto.DocumentGenerationResponseDto;
 import com.socialsecretariat.espacepartage.dto.TemplateVariableDto;
 import com.socialsecretariat.espacepartage.model.*;
 import com.socialsecretariat.espacepartage.repository.*;
@@ -25,24 +26,110 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 @Slf4j
-public class DocumentGenerationService {
+public class DocumentService {
     
+    private final DocumentRepository documentRepository;
     private final DocumentTemplateRepository documentTemplateRepository;
-    private final DocumentGenerationRepository documentGenerationRepository;
-    private final CompanyRepository companyRepository;
     private final CollaboratorRepository collaboratorRepository;
+    private final DimonaRepository dimonaRepository;
     private final UserRepository userRepository;
     private final DocumentTemplateService documentTemplateService;
     
     @Value("${app.documents.output-path:src/main/resources/generated-documents}")
     private String outputPath;
     
+    public List<DocumentDto> getAllDocuments() {
+        return documentRepository.findAll().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+    
+    public List<ContratDto> getAllContrats() {
+        return documentRepository.findAll().stream()
+                .filter(document -> document instanceof Contrat)
+                .map(document -> convertToContratDto((Contrat) document))
+                .collect(Collectors.toList());
+    }
+    
+    public Optional<DocumentDto> getDocumentById(UUID id) {
+        return documentRepository.findById(id)
+                .map(this::convertToDto);
+    }
+    
+    public void deleteDocument(UUID id) {
+        documentRepository.deleteById(id);
+    }
+    
+    public void terminerContrat(UUID contratId) {
+        Optional<Document> documentOpt = documentRepository.findById(contratId);
+        if (documentOpt.isEmpty()) {
+            throw new IllegalArgumentException("Contrat not found");
+        }
+        
+        Document document = documentOpt.get();
+        if (!(document instanceof Contrat)) {
+            throw new IllegalArgumentException("Document is not a contract");
+        }
+        
+        Contrat contrat = (Contrat) document;
+        
+        // Vérifier si une dimona OUT existe déjà
+        if (contrat.getDimonaOut() != null) {
+            throw new IllegalStateException("Ce contrat a déjà une dimona OUT");
+        }
+        
+        // Créer une dimona OUT
+        Dimona dimonaOut = new Dimona();
+        dimonaOut.setType("OUT");
+        dimonaOut.setExitDate(new Date());
+        dimonaOut.setStatus(Dimona.Status.TO_CONFIRM);
+        dimonaOut.setCollaborator(contrat.getCollaborator());
+        dimonaOut.setCompany(contrat.getCompany());
+        dimonaOut.setContrat(contrat);
+        dimonaOut = dimonaRepository.save(dimonaOut);
+        
+        // Mettre à jour le contrat
+        contrat.setDimonaOut(dimonaOut);
+        contrat.setContratStatus(Contrat.ContratStatus.TERMINE);
+        contrat.setEndDate(LocalDate.now());
+        
+        documentRepository.save(contrat);
+    }
+    
+    public void activerContrat(UUID contratId) {
+        Optional<Document> documentOpt = documentRepository.findById(contratId);
+        if (documentOpt.isEmpty()) {
+            throw new IllegalArgumentException("Contrat not found");
+        }
+        
+        Document document = documentOpt.get();
+        if (!(document instanceof Contrat)) {
+            throw new IllegalArgumentException("Document is not a contract");
+        }
+        
+        Contrat contrat = (Contrat) document;
+        
+        // Vérifier si le contrat peut être réactivé
+        if (contrat.getContratStatus() == Contrat.ContratStatus.ACTIF) {
+            throw new IllegalStateException("Ce contrat est déjà actif");
+        }
+        
+        // Réactiver le contrat
+        contrat.setContratStatus(Contrat.ContratStatus.ACTIF);
+        contrat.setEndDate(null); // Supprimer la date de fin
+        
+        documentRepository.save(contrat);
+    }
+    
+    // Méthode principale de génération de documents
     @Transactional
-    public DocumentGenerationResponseDto generateDocument(DocumentGenerationRequestDto request, UUID userId) {
+    public Object generateDocument(DocumentGenerationRequestDto request, UUID userId) {
         try {
             // Validate request
             DocumentTemplate template = documentTemplateRepository.findById(request.getTemplateId())
@@ -51,61 +138,17 @@ public class DocumentGenerationService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
             
-            Company company = null;
-            if (request.getCompanyId() != null) {
-                company = companyRepository.findById(request.getCompanyId())
-                        .orElseThrow(() -> new IllegalArgumentException("Company not found"));
-            }
-            
             Collaborator collaborator = null;
             if (request.getCollaboratorId() != null) {
                 collaborator = collaboratorRepository.findById(request.getCollaboratorId())
                         .orElseThrow(() -> new IllegalArgumentException("Collaborator not found"));
             }
             
-            // Create generation record
-            DocumentGeneration generation = new DocumentGeneration();
-            generation.setTemplate(template);
-            generation.setCompany(company);
-            generation.setCollaborator(collaborator);
-            generation.setGeneratedBy(user);
-            generation.setFormData(request.getManualFields());
-            generation.setStatus(DocumentGeneration.GenerationStatus.PROCESSING);
-            
-            generation = documentGenerationRepository.save(generation);
-            
-            try {
-                // Generate document
-                String generatedFileName = generateDocumentFile(template, company, collaborator, request.getManualFields(), generation.getId());
-                
-                // Convert to PDF
-                String pdfFileName = convertToPdf(generatedFileName);
-                
-                // Update generation record
-                generation.setGeneratedFileName(generatedFileName);
-                generation.setGeneratedFilePath(Paths.get(outputPath, generatedFileName).toString());
-                
-                // Check if PDF conversion was successful
-                if (pdfFileName.endsWith(".pdf") && Files.exists(Paths.get(outputPath, pdfFileName))) {
-                    generation.setPdfFilePath(Paths.get(outputPath, pdfFileName).toString());
-                    log.debug("PDF file successfully created and stored at: {}", generation.getPdfFilePath());
-                } else {
-                    // PDF conversion failed - this should cause the generation to fail
-                    throw new RuntimeException("PDF conversion failed. LibreOffice may not be installed or accessible. Generated DOCX file is available but PDF conversion is required.");
-                }
-                
-                generation.setStatus(DocumentGeneration.GenerationStatus.COMPLETED);
-                
-                generation = documentGenerationRepository.save(generation);
-                
-                return convertToResponseDto(generation);
-                
-            } catch (Exception e) {
-                log.error("Error generating document", e);
-                generation.setStatus(DocumentGeneration.GenerationStatus.FAILED);
-                generation.setErrorMessage(e.getMessage());
-                documentGenerationRepository.save(generation);
-                throw e;
+            // Générer selon le type de template
+            if (template.getDocumentType() == DocumentTemplate.DocumentType.CONTRAT) {
+                return generateContrat(template, user, collaborator, request.getManualFields());
+            } else {
+                return generateGenericDocument(template, user, collaborator, request.getManualFields());
             }
             
         } catch (Exception e) {
@@ -114,8 +157,141 @@ public class DocumentGenerationService {
         }
     }
     
+    private ContratDto generateContrat(DocumentTemplate template, User user, Collaborator collaborator, 
+                                     Map<String, String> manualFields) {
+        if (collaborator == null) {
+            throw new IllegalArgumentException("Collaborator is required for contract generation");
+        }
+        
+        try {
+            // Create Dimona IN for the contract
+            Dimona dimonaIn = new Dimona();
+            dimonaIn.setType("IN");
+            dimonaIn.setEntryDate(new Date());
+            dimonaIn.setStatus(Dimona.Status.TO_CONFIRM);
+            dimonaIn.setCollaborator(collaborator);
+            dimonaIn.setCompany(collaborator.getCompany());
+            dimonaIn = dimonaRepository.save(dimonaIn);
+            
+            // Create contract
+            Contrat contrat = new Contrat();
+            contrat.setTemplate(template);
+            contrat.setCompany(collaborator.getCompany());
+            contrat.setCollaborator(collaborator);
+            contrat.setGeneratedBy(user);
+            contrat.setFormData(manualFields);
+            contrat.setStatus(Document.GenerationStatus.PROCESSING);
+            contrat.setContratStatus(Contrat.ContratStatus.ACTIF);
+            contrat.setStartDate(LocalDate.now());
+            contrat.setDimonaIn(dimonaIn);
+            
+            contrat = (Contrat) documentRepository.save(contrat);
+            
+            // Link dimona to contract
+            dimonaIn.setContrat(contrat);
+            dimonaRepository.save(dimonaIn);
+            
+            try {
+                // Generate document file
+                String generatedFileName = generateDocumentFile(template, collaborator.getCompany(), 
+                                                              collaborator, manualFields, contrat.getId());
+                
+                // Convert to PDF
+                String pdfFileName = convertToPdf(generatedFileName);
+                
+                // Update contract record
+                contrat.setGeneratedFileName(generatedFileName);
+                contrat.setGeneratedFilePath(Paths.get(outputPath, generatedFileName).toString());
+                
+                if (pdfFileName.endsWith(".pdf") && Files.exists(Paths.get(outputPath, pdfFileName))) {
+                    contrat.setPdfFilePath(Paths.get(outputPath, pdfFileName).toString());
+                    log.debug("PDF file successfully created and stored at: {}", contrat.getPdfFilePath());
+                } else {
+                    throw new RuntimeException("PDF conversion failed. LibreOffice may not be installed or accessible.");
+                }
+                
+                contrat.setStatus(Document.GenerationStatus.COMPLETED);
+                contrat = (Contrat) documentRepository.save(contrat);
+                
+                return convertToContratDto(contrat);
+                
+            } catch (Exception e) {
+                log.error("Error generating contract document", e);
+                contrat.setStatus(Document.GenerationStatus.FAILED);
+                contrat.setErrorMessage(e.getMessage());
+                documentRepository.save(contrat);
+                throw e;
+            }
+            
+        } catch (Exception e) {
+            log.error("Error in contract generation process", e);
+            throw new RuntimeException("Failed to generate contract: " + e.getMessage(), e);
+        }
+    }
+    
+    private DocumentDto generateGenericDocument(DocumentTemplate template, User user, Collaborator collaborator, 
+                                              Map<String, String> manualFields) {
+        // TODO: Implémenter la génération de documents génériques
+        // Pour l'instant, on retourne une exception
+        throw new UnsupportedOperationException("Generic document generation not yet implemented");
+    }
+    
+    private DocumentDto convertToDto(Document document) {
+        DocumentDto dto = new DocumentDto();
+        dto.setId(document.getId());
+        dto.setTemplateId(document.getTemplate() != null ? document.getTemplate().getId() : null);
+        dto.setTemplateName(document.getTemplate() != null ? document.getTemplate().getName() : null);
+        dto.setCompanyId(document.getCompany() != null ? document.getCompany().getId() : null);
+        dto.setCompanyName(document.getCompany() != null ? document.getCompany().getName() : null);
+        dto.setGeneratedById(document.getGeneratedBy() != null ? document.getGeneratedBy().getId() : null);
+        dto.setGeneratedByName(document.getGeneratedBy() != null ? 
+            document.getGeneratedBy().getFirstName() + " " + document.getGeneratedBy().getLastName() : null);
+        dto.setGeneratedFileName(document.getGeneratedFileName());
+        dto.setGeneratedFilePath(document.getGeneratedFilePath());
+        dto.setPdfFilePath(document.getPdfFilePath());
+        dto.setFormData(document.getFormData());
+        dto.setStatus(document.getStatus());
+        dto.setErrorMessage(document.getErrorMessage());
+        dto.setCreatedAt(document.getCreatedAt());
+        dto.setDocumentType(document.getClass().getSimpleName());
+        return dto;
+    }
+    
+    private ContratDto convertToContratDto(Contrat contrat) {
+        ContratDto dto = new ContratDto();
+        
+        // Champs hérités de Document
+        dto.setId(contrat.getId());
+        dto.setTemplateId(contrat.getTemplate() != null ? contrat.getTemplate().getId() : null);
+        dto.setTemplateName(contrat.getTemplate() != null ? contrat.getTemplate().getName() : null);
+        dto.setCompanyId(contrat.getCompany() != null ? contrat.getCompany().getId() : null);
+        dto.setCompanyName(contrat.getCompany() != null ? contrat.getCompany().getName() : null);
+        dto.setGeneratedById(contrat.getGeneratedBy() != null ? contrat.getGeneratedBy().getId() : null);
+        dto.setGeneratedByName(contrat.getGeneratedBy() != null ? 
+            contrat.getGeneratedBy().getFirstName() + " " + contrat.getGeneratedBy().getLastName() : null);
+        dto.setGeneratedFileName(contrat.getGeneratedFileName());
+        dto.setGeneratedFilePath(contrat.getGeneratedFilePath());
+        dto.setPdfFilePath(contrat.getPdfFilePath());
+        dto.setFormData(contrat.getFormData());
+        dto.setStatus(contrat.getStatus());
+        dto.setErrorMessage(contrat.getErrorMessage());
+        dto.setCreatedAt(contrat.getCreatedAt());
+        
+        // Champs spécifiques au Contrat
+        dto.setCollaboratorId(contrat.getCollaborator() != null ? contrat.getCollaborator().getId() : null);
+        dto.setCollaboratorFirstName(contrat.getCollaborator() != null ? contrat.getCollaborator().getFirstName() : null);
+        dto.setCollaboratorLastName(contrat.getCollaborator() != null ? contrat.getCollaborator().getLastName() : null);
+        dto.setDimonaInId(contrat.getDimonaIn() != null ? contrat.getDimonaIn().getId() : null);
+        dto.setDimonaOutId(contrat.getDimonaOut() != null ? contrat.getDimonaOut().getId() : null);
+        dto.setContratStatus(contrat.getContratStatus());
+        dto.setStartDate(contrat.getStartDate());
+        dto.setEndDate(contrat.getEndDate());
+        
+        return dto;
+    }
+    
     private String generateDocumentFile(DocumentTemplate template, Company company, Collaborator collaborator, 
-                                      Map<String, String> manualFields, UUID generationId) throws IOException {
+                                      Map<String, String> manualFields, UUID documentId) throws IOException {
         
         // Load template file
         ClassPathResource templateResource = new ClassPathResource(template.getFilePath());
@@ -151,7 +327,7 @@ public class DocumentGenerationService {
         
         // Generate unique filename
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        String generatedFileName = template.getName() + "_" + generationId + "_" + timestamp + ".docx";
+        String generatedFileName = template.getName() + "_" + documentId + "_" + timestamp + ".docx";
         
         // Process DOCX template
         try (InputStream templateStream = templateResource.getInputStream();
@@ -336,53 +512,5 @@ public class DocumentGenerationService {
             // Return the DOCX filename as fallback - the system will still work without PDF
             return docxFileName;
         }
-    }
-    
-    public List<DocumentGenerationResponseDto> getGenerationHistory(UUID userId) {
-        List<DocumentGeneration> generations = documentGenerationRepository.findByGeneratedByIdOrderByCreatedAtDesc(userId);
-        return generations.stream()
-                .map(this::convertToResponseDto)
-                .toList();
-    }
-    
-    public List<DocumentGenerationResponseDto> getAllGenerations() {
-        List<DocumentGeneration> generations = documentGenerationRepository.findAllByOrderByCreatedAtDesc();
-        return generations.stream()
-                .map(this::convertToResponseDto)
-                .toList();
-    }
-    
-    public Optional<DocumentGenerationResponseDto> getGenerationById(UUID generationId) {
-        return documentGenerationRepository.findById(generationId)
-                .map(this::convertToResponseDto);
-    }
-    
-    private DocumentGenerationResponseDto convertToResponseDto(DocumentGeneration generation) {
-        DocumentGenerationResponseDto dto = new DocumentGenerationResponseDto();
-        dto.setId(generation.getId());
-        dto.setTemplateName(generation.getTemplate().getName());
-        dto.setTemplateDisplayName(generation.getTemplate().getDisplayName());
-        dto.setCompanyName(generation.getCompany() != null ? generation.getCompany().getName() : null);
-        dto.setCollaboratorName(generation.getCollaborator() != null ? 
-                generation.getCollaborator().getFirstName() + " " + generation.getCollaborator().getLastName() : null);
-        dto.setGeneratedByName(generation.getGeneratedBy().getUsername());
-        dto.setGeneratedFileName(generation.getGeneratedFileName());
-        dto.setGeneratedFilePath(generation.getGeneratedFilePath());
-        dto.setPdfFilePath(generation.getPdfFilePath());
-        
-        // Calculer le nom du fichier PDF à partir du chemin
-        if (generation.getPdfFilePath() != null) {
-            Path pdfPath = Paths.get(generation.getPdfFilePath());
-            dto.setPdfFileName(pdfPath.getFileName().toString());
-        } else {
-            dto.setPdfFileName(null);
-        }
-        
-        dto.setStatus(generation.getStatus());
-        dto.setErrorMessage(generation.getErrorMessage());
-        dto.setCreatedAt(generation.getCreatedAt());
-        dto.setFormData(generation.getFormData());
-        
-        return dto;
     }
 }

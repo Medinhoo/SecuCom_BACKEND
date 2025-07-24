@@ -12,12 +12,14 @@ import java.util.Map;
 import java.util.UUID;
 
 @Entity
-@Table(name = "TDocumentGeneration")
+@Table(name = "TDocument")
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "document_type", discriminatorType = DiscriminatorType.STRING)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DocumentGeneration {
+public abstract class Document {
     
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,10 +32,6 @@ public class DocumentGeneration {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collaborator_id")
-    private Collaborator collaborator;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "generated_by", nullable = false)
@@ -49,8 +47,8 @@ public class DocumentGeneration {
     private String pdfFilePath;
     
     @ElementCollection
-    @CollectionTable(name = "document_generation_form_data", 
-                    joinColumns = @JoinColumn(name = "generation_id"))
+    @CollectionTable(name = "document_form_data", 
+                    joinColumns = @JoinColumn(name = "document_id"))
     @MapKeyColumn(name = "field_name")
     @Column(name = "field_value", columnDefinition = "TEXT")
     private Map<String, String> formData;

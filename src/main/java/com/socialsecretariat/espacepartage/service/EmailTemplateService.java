@@ -23,7 +23,7 @@ public class EmailTemplateService {
     private final CollaboratorService collaboratorService;
     private final UserService userService;
     
-    public EmailTemplateDto processEmailTemplate(DocumentTemplate template, DocumentGeneration generation) {
+    public EmailTemplateDto processEmailTemplate(DocumentTemplate template, Document document) {
         try {
             EmailTemplateDto emailTemplate = new EmailTemplateDto();
             
@@ -37,7 +37,7 @@ public class EmailTemplateService {
             // Process subject with variable replacement
             String processedSubject = processTemplateVariables(
                 template.getDefaultEmailSubject() != null ? template.getDefaultEmailSubject() : "Document généré",
-                generation
+                document
             );
             emailTemplate.setDefaultSubject(processedSubject);
             
@@ -45,18 +45,18 @@ public class EmailTemplateService {
             String processedBody = processTemplateVariables(
                 template.getDefaultEmailBody() != null ? template.getDefaultEmailBody() : 
                 "Bonjour,\n\nVeuillez trouver ci-joint le document généré.\n\nCordialement",
-                generation
+                document
             );
             emailTemplate.setDefaultBody(processedBody);
             
             // Process recipients
-            emailTemplate.setDefaultRecipients(resolveRecipients(template.getDefaultRecipients(), generation));
-            emailTemplate.setDefaultCcRecipients(resolveRecipients(template.getDefaultCcRecipients(), generation));
+            emailTemplate.setDefaultRecipients(resolveRecipients(template.getDefaultRecipients(), document));
+            emailTemplate.setDefaultCcRecipients(resolveRecipients(template.getDefaultCcRecipients(), document));
             
             return emailTemplate;
             
         } catch (Exception e) {
-            log.error("Error processing email template for generation: {}", generation.getId(), e);
+            log.error("Error processing email template for document: {}", document.getId(), e);
             
             // Return a basic template in case of error
             EmailTemplateDto fallbackTemplate = new EmailTemplateDto();
@@ -70,7 +70,7 @@ public class EmailTemplateService {
         }
     }
     
-    private String processTemplateVariables(String template, DocumentGeneration generation) {
+    private String processTemplateVariables(String template, Document document) {
         if (template == null) {
             return "";
         }
@@ -79,32 +79,35 @@ public class EmailTemplateService {
         
         // Replace common variables
         processed = processed.replace("{templateDisplayName}", 
-            generation.getTemplate() != null ? generation.getTemplate().getDisplayName() : "");
+            document.getTemplate() != null ? document.getTemplate().getDisplayName() : "");
         processed = processed.replace("{documentName}", 
-            generation.getGeneratedFileName() != null ? generation.getGeneratedFileName() : "");
+            document.getGeneratedFileName() != null ? document.getGeneratedFileName() : "");
         processed = processed.replace("{generationDate}", 
-            generation.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            document.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
         
         // Replace company variables
-        if (generation.getCompany() != null) {
-            processed = processed.replace("{companyName}", generation.getCompany().getName());
+        if (document.getCompany() != null) {
+            processed = processed.replace("{companyName}", document.getCompany().getName());
         }
         
-        // Replace collaborator variables
-        if (generation.getCollaborator() != null) {
-            String collaboratorName = generation.getCollaborator().getFirstName() + " " + generation.getCollaborator().getLastName();
-            processed = processed.replace("{collaboratorName}", collaboratorName);
+        // Replace collaborator variables (only for contracts)
+        if (document instanceof Contrat) {
+            Contrat contrat = (Contrat) document;
+            if (contrat.getCollaborator() != null) {
+                String collaboratorName = contrat.getCollaborator().getFirstName() + " " + contrat.getCollaborator().getLastName();
+                processed = processed.replace("{collaboratorName}", collaboratorName);
+            }
         }
         
         // Replace user variables
-        if (generation.getGeneratedBy() != null) {
-            processed = processed.replace("{generatedByName}", generation.getGeneratedBy().getUsername());
+        if (document.getGeneratedBy() != null) {
+            processed = processed.replace("{generatedByName}", document.getGeneratedBy().getUsername());
         }
         
         return processed;
     }
     
-    private List<String> resolveRecipients(String recipientsJson, DocumentGeneration generation) {
+    private List<String> resolveRecipients(String recipientsJson, Document document) {
         List<String> resolvedRecipients = new ArrayList<>();
         
         if (recipientsJson == null || recipientsJson.trim().isEmpty()) {
@@ -116,7 +119,7 @@ public class EmailTemplateService {
             List<String> recipientTypes = objectMapper.readValue(recipientsJson, new TypeReference<List<String>>() {});
             
             for (String recipientType : recipientTypes) {
-                List<String> emails = resolveRecipientType(recipientType, generation);
+                List<String> emails = resolveRecipientType(recipientType, document);
                 resolvedRecipients.addAll(emails);
             }
             
@@ -131,33 +134,36 @@ public class EmailTemplateService {
         return resolvedRecipients;
     }
     
-    private List<String> resolveRecipientType(String recipientType, DocumentGeneration generation) {
+    private List<String> resolveRecipientType(String recipientType, Document document) {
         List<String> emails = new ArrayList<>();
         
         try {
             switch (recipientType.toUpperCase()) {
                 case "COMPANY_EMAIL":
-                    if (generation.getCompany() != null) {
+                    if (document.getCompany() != null) {
                         // Get company email from company service
                         // This would need to be implemented based on your Company model
-                        log.debug("Resolving company email for company ID: {}", generation.getCompany().getId());
-                        // emails.add(companyService.getCompanyEmail(generation.getCompany().getId()));
+                        log.debug("Resolving company email for company ID: {}", document.getCompany().getId());
+                        // emails.add(companyService.getCompanyEmail(document.getCompany().getId()));
                     }
                     break;
                     
                 case "COLLABORATOR_EMAIL":
-                    if (generation.getCollaborator() != null) {
-                        // Get collaborator email from collaborator service
-                        log.debug("Resolving collaborator email for collaborator ID: {}", generation.getCollaborator().getId());
-                        // emails.add(collaboratorService.getCollaboratorEmail(generation.getCollaborator().getId()));
+                    if (document instanceof Contrat) {
+                        Contrat contrat = (Contrat) document;
+                        if (contrat.getCollaborator() != null) {
+                            // Get collaborator email from collaborator service
+                            log.debug("Resolving collaborator email for collaborator ID: {}", contrat.getCollaborator().getId());
+                            // emails.add(collaboratorService.getCollaboratorEmail(contrat.getCollaborator().getId()));
+                        }
                     }
                     break;
                     
                 case "CURRENT_USER_EMAIL":
-                    if (generation.getGeneratedBy() != null) {
+                    if (document.getGeneratedBy() != null) {
                         // Get current user email
-                        log.debug("Resolving current user email for user ID: {}", generation.getGeneratedBy().getId());
-                        // emails.add(userService.getUserEmail(generation.getGeneratedBy().getId()));
+                        log.debug("Resolving current user email for user ID: {}", document.getGeneratedBy().getId());
+                        // emails.add(userService.getUserEmail(document.getGeneratedBy().getId()));
                     }
                     break;
                     

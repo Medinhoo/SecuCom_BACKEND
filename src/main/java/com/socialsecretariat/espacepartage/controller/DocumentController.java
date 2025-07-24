@@ -2,14 +2,14 @@ package com.socialsecretariat.espacepartage.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.socialsecretariat.espacepartage.dto.*;
-import com.socialsecretariat.espacepartage.model.DocumentGeneration;
+import com.socialsecretariat.espacepartage.model.Document;
 import com.socialsecretariat.espacepartage.model.User;
-import com.socialsecretariat.espacepartage.service.DocumentGenerationService;
+import com.socialsecretariat.espacepartage.service.DocumentService;
 import com.socialsecretariat.espacepartage.service.DocumentTemplateService;
 import com.socialsecretariat.espacepartage.service.EntityMetadataService;
 import com.socialsecretariat.espacepartage.service.TemplateAnalysisService;
 import com.socialsecretariat.espacepartage.service.EmailService;
-import com.socialsecretariat.espacepartage.service.EmailTemplateService;
+import com.socialsecretariat.espacepartage.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
@@ -20,11 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import com.socialsecretariat.espacepartage.service.UserService;
 import org.springframework.web.multipart.MultipartFile;
 
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,17 +36,18 @@ import java.util.UUID;
 @RequestMapping("/documents")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = "*")
 public class DocumentController {
     
     private final DocumentTemplateService documentTemplateService;
-    private final DocumentGenerationService documentGenerationService;
+    private final DocumentService documentService;
     private final UserService userService;
     private final TemplateAnalysisService templateAnalysisService;
     private final EntityMetadataService entityMetadataService;
     private final EmailService emailService;
-    private final EmailTemplateService emailTemplateService;
     private final ObjectMapper objectMapper;
 
+    // ===== ENDPOINTS TEMPLATES =====
     
     @GetMapping("/templates")
     public ResponseEntity<List<DocumentTemplateDto>> getAllTemplates() {
@@ -76,123 +74,140 @@ public class DocumentController {
         return ResponseEntity.ok(variables);
     }
     
+    // ===== ENDPOINTS GÉNÉRATION =====
+    
     @PostMapping("/generate")
-    public ResponseEntity<DocumentGenerationResponseDto> generateDocument(
-            @RequestBody DocumentGenerationRequestDto request) {
-        
-        UUID userId = getCurrentUserId();
-        DocumentGenerationResponseDto response = documentGenerationService.generateDocument(request, userId);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> generateDocument(@RequestBody DocumentGenerationRequestDto request) {
+        try {
+            UUID userId = getCurrentUserId();
+            Object response = documentService.generateDocument(request, userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error generating document", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
     
-    @GetMapping("/generations")
-    public ResponseEntity<List<DocumentGenerationResponseDto>> getAllGenerations() {
-        List<DocumentGenerationResponseDto> generations = documentGenerationService.getAllGenerations();
-        return ResponseEntity.ok(generations);
+    // ===== ENDPOINTS DOCUMENTS =====
+    
+    @GetMapping
+    public ResponseEntity<List<?>> getAllDocuments(@RequestParam(required = false) String type) {
+        if ("CONTRAT".equals(type)) {
+            List<ContratDto> contrats = documentService.getAllContrats();
+            return ResponseEntity.ok(contrats);
+        } else {
+            List<DocumentDto> documents = documentService.getAllDocuments();
+            return ResponseEntity.ok(documents);
+        }
     }
     
-    @GetMapping("/generations/{generationId}")
-    public ResponseEntity<DocumentGenerationResponseDto> getGeneration(@PathVariable UUID generationId) {
-        Optional<DocumentGenerationResponseDto> generation = documentGenerationService.getGenerationById(generationId);
-        return generation.map(ResponseEntity::ok)
+    @GetMapping("/{id}")
+    public ResponseEntity<DocumentDto> getDocumentById(@PathVariable UUID id) {
+        return documentService.getDocumentById(id)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    @GetMapping("/generations/{generationId}/download-pdf")
-    public ResponseEntity<Resource> downloadGeneratedPdf(@PathVariable UUID generationId) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDocument(@PathVariable UUID id) {
         try {
-            log.debug("Attempting to download PDF for generation: {}", generationId);
+            documentService.deleteDocument(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            log.error("Error deleting document", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    // ===== ENDPOINTS CONTRATS =====
+    
+    @PutMapping("/contrats/{id}/terminer")
+    public ResponseEntity<?> terminerContrat(@PathVariable UUID id) {
+        try {
+            documentService.terminerContrat(id);
+            return ResponseEntity.ok(Map.of("message", "Contrat terminé avec succès"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error terminating contract", e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Erreur lors de la terminaison du contrat"));
+        }
+    }
+    
+    @PutMapping("/contrats/{id}/activer")
+    public ResponseEntity<?> activerContrat(@PathVariable UUID id) {
+        try {
+            documentService.activerContrat(id);
+            return ResponseEntity.ok(Map.of("message", "Contrat activé avec succès"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error activating contract", e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Erreur lors de l'activation du contrat"));
+        }
+    }
+    
+    // ===== ENDPOINTS TÉLÉCHARGEMENT =====
+    
+    @GetMapping("/{documentId}/download-pdf")
+    public ResponseEntity<Resource> downloadPdf(@PathVariable UUID documentId) {
+        try {
+            Optional<DocumentDto> documentOpt = documentService.getDocumentById(documentId);
             
-            Optional<DocumentGenerationResponseDto> generationOpt = documentGenerationService.getGenerationById(generationId);
-            
-            if (generationOpt.isEmpty()) {
-                log.warn("Generation not found: {}", generationId);
+            if (documentOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
             
-            DocumentGenerationResponseDto generation = generationOpt.get();
-            log.debug("Found generation: {} with status: {}", generationId, generation.getStatus());
+            DocumentDto document = documentOpt.get();
             
-            // Check if generation is completed
-            if (generation.getStatus() != DocumentGeneration.GenerationStatus.COMPLETED) {
-                log.warn("Generation {} is not completed. Status: {}", generationId, generation.getStatus());
+            if (document.getStatus() != Document.GenerationStatus.COMPLETED) {
                 return ResponseEntity.badRequest().build();
             }
             
-            // For completed generations, PDF should always exist
-            String pdfFilePath = generation.getPdfFilePath();
-            log.debug("PDF file path from generation: {}", pdfFilePath);
-            log.debug("DOCX file path from generation: {}", generation.getGeneratedFilePath());
-            
-            Path pdfPath = Paths.get(pdfFilePath);
-            log.debug("Resolved PDF path: {}", pdfPath);
-            
-            if (!Files.exists(pdfPath)) {
-                log.error("PDF file not found at path: {} for generation: {}. File may have been deleted.", pdfFilePath, generationId);
+            String pdfFilePath = document.getPdfFilePath();
+            if (pdfFilePath == null) {
                 return ResponseEntity.notFound().build();
             }
             
-            // Verify the file is actually a PDF
-            if (!pdfFilePath.toLowerCase().endsWith(".pdf")) {
-                log.error("CRITICAL: pdfFilePath does not end with .pdf! Path: {}", pdfFilePath);
-                log.error("This means the PDF conversion failed but the generation was marked as successful");
-                return ResponseEntity.status(422).build();
+            Path pdfPath = Paths.get(pdfFilePath);
+            if (!Files.exists(pdfPath)) {
+                return ResponseEntity.notFound().build();
             }
             
-            log.debug("PDF file found at: {}", pdfPath);
-            
             Resource resource = new FileSystemResource(pdfPath.toFile());
-            log.debug("resource : {}", resource);
             String fileName = pdfPath.getFileName().toString();
-            log.debug("fileName : {}", fileName);
             
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
-                    .header("Content-Transfer-Encoding", "binary")
-                    .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
-                    .header(HttpHeaders.PRAGMA, "no-cache")
-                    .header(HttpHeaders.EXPIRES, "0")
                     .contentType(MediaType.APPLICATION_PDF)
                     .body(resource);
                     
         } catch (Exception e) {
-            log.error("Error downloading PDF for generation: {}", generationId, e);
+            log.error("Error downloading PDF for document: {}", documentId, e);
             return ResponseEntity.internalServerError().build();
         }
     }
 
-    @GetMapping("/generations/{generationId}/download-docx")
-    public ResponseEntity<Resource> downloadGeneratedDocx(@PathVariable UUID generationId) {
+    @GetMapping("/{documentId}/download-docx")
+    public ResponseEntity<Resource> downloadDocx(@PathVariable UUID documentId) {
         try {
-            log.debug("Attempting to download DOCX for generation: {}", generationId);
+            Optional<DocumentDto> documentOpt = documentService.getDocumentById(documentId);
             
-            Optional<DocumentGenerationResponseDto> generationOpt = documentGenerationService.getGenerationById(generationId);
-            
-            if (generationOpt.isEmpty()) {
-                log.warn("Generation not found: {}", generationId);
+            if (documentOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
             
-            DocumentGenerationResponseDto generation = generationOpt.get();
-            log.debug("Found generation: {} with status: {}", generationId, generation.getStatus());
+            DocumentDto document = documentOpt.get();
+            String docxFilePath = document.getGeneratedFilePath();
             
-            // Use the DOCX file path from the DTO
-            String docxFilePath = generation.getGeneratedFilePath();
-            
-            if (docxFilePath == null || docxFilePath.isEmpty()) {
-                log.warn("No DOCX file path stored for generation: {}", generationId);
+            if (docxFilePath == null) {
                 return ResponseEntity.notFound().build();
             }
             
             Path docxPath = Paths.get(docxFilePath);
-            
             if (!Files.exists(docxPath)) {
-                log.warn("DOCX file not found at path: {} for generation: {}", docxFilePath, generationId);
                 return ResponseEntity.notFound().build();
             }
-            
-            log.debug("DOCX file found at: {}", docxPath);
             
             Resource resource = new FileSystemResource(docxPath.toFile());
             String fileName = docxPath.getFileName().toString();
@@ -203,12 +218,12 @@ public class DocumentController {
                     .body(resource);
                     
         } catch (Exception e) {
-            log.error("Error downloading DOCX for generation: {}", generationId, e);
+            log.error("Error downloading DOCX for document: {}", documentId, e);
             return ResponseEntity.internalServerError().build();
         }
     }
     
-    // ===== NOUVEAUX ENDPOINTS POUR LA CRÉATION DE TEMPLATES =====
+    // ===== ENDPOINTS CRÉATION DE TEMPLATES =====
     
     @PostMapping("/templates/analyze")
     public ResponseEntity<?> analyzeTemplate(@RequestParam("file") MultipartFile file) {
@@ -253,6 +268,7 @@ public class DocumentController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam("docxFile") MultipartFile docxFile,
             @RequestParam("mappings") String mappingsJson,
+            @RequestParam(value = "documentType", required = false) String documentType,
             @RequestParam(value = "emailEnabled", required = false) Boolean emailEnabled,
             @RequestParam(value = "defaultEmailSubject", required = false) String defaultEmailSubject,
             @RequestParam(value = "defaultEmailBody", required = false) String defaultEmailBody,
@@ -305,23 +321,21 @@ public class DocumentController {
         }
     }
     
-    // ===== FIN NOUVEAUX ENDPOINTS =====
-    
     // ===== ENDPOINTS EMAIL =====
     
-    @GetMapping("/generations/{generationId}/email-template")
-    public ResponseEntity<EmailTemplateDto> getEmailTemplate(@PathVariable UUID generationId) {
+    @GetMapping("/{documentId}/email-template")
+    public ResponseEntity<EmailTemplateDto> getEmailTemplate(@PathVariable UUID documentId) {
         try {
-            // Get the document generation
-            Optional<DocumentGenerationResponseDto> generationOpt = documentGenerationService.getGenerationById(generationId);
-            if (generationOpt.isEmpty()) {
+            // Get the document
+            Optional<DocumentDto> documentOpt = documentService.getDocumentById(documentId);
+            if (documentOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
             
-            DocumentGenerationResponseDto generationDto = generationOpt.get();
+            DocumentDto document = documentOpt.get();
             
             // Get the template by name to access email configuration
-            Optional<DocumentTemplateDto> templateOpt = documentTemplateService.getTemplateByName(generationDto.getTemplateName());
+            Optional<DocumentTemplateDto> templateOpt = documentTemplateService.getTemplateByName(document.getTemplateName());
             
             EmailTemplateDto emailTemplate = new EmailTemplateDto();
             
@@ -334,10 +348,10 @@ public class DocumentController {
                 // Process subject with variables
                 String subject = template.getDefaultEmailSubject();
                 if (subject == null || subject.isEmpty()) {
-                    subject = "Document généré - " + generationDto.getTemplateDisplayName();
+                    subject = "Document généré - " + template.getDisplayName();
                 } else {
                     // Replace variables in subject
-                    subject = processEmailVariables(subject, generationDto);
+                    subject = processEmailVariables(subject, document);
                 }
                 emailTemplate.setDefaultSubject(subject);
                 
@@ -347,7 +361,7 @@ public class DocumentController {
                     body = "Bonjour,\n\nVeuillez trouver ci-joint le document généré.\n\nCordialement";
                 } else {
                     // Replace variables in body
-                    body = processEmailVariables(body, generationDto);
+                    body = processEmailVariables(body, document);
                 }
                 emailTemplate.setDefaultBody(body);
                 
@@ -381,7 +395,7 @@ public class DocumentController {
             } else {
                 // Fallback if template not found
                 emailTemplate.setEmailEnabled(true);
-                emailTemplate.setDefaultSubject("Document généré - " + generationDto.getTemplateDisplayName());
+                emailTemplate.setDefaultSubject("Document généré - " + document.getTemplateName());
                 emailTemplate.setDefaultBody("Bonjour,\n\nVeuillez trouver ci-joint le document généré.\n\nCordialement");
                 emailTemplate.setDefaultRecipients(List.of());
                 emailTemplate.setDefaultCcRecipients(List.of());
@@ -390,7 +404,7 @@ public class DocumentController {
             return ResponseEntity.ok(emailTemplate);
             
         } catch (Exception e) {
-            log.error("Error getting email template for generation: {}", generationId, e);
+            log.error("Error getting email template for document: {}", documentId, e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -398,7 +412,7 @@ public class DocumentController {
     @PostMapping("/send-email")
     public ResponseEntity<SendEmailResponse> sendDocumentEmail(@RequestBody SendEmailRequest request) {
         try {
-            log.info("Sending email for document generation: {}", request.getDocumentGenerationId());
+            log.info("Sending email for document: {}", request.getDocumentGenerationId());
             
             // Validate request
             if (request.getRecipients() == null || request.getRecipients().isEmpty()) {
@@ -408,19 +422,19 @@ public class DocumentController {
                 return ResponseEntity.status(400).body(errorResponse);
             }
             
-            // Get the document generation
-            Optional<DocumentGenerationResponseDto> generationOpt = documentGenerationService.getGenerationById(request.getDocumentGenerationId());
-            if (generationOpt.isEmpty()) {
+            // Get the document
+            Optional<DocumentDto> documentOpt = documentService.getDocumentById(request.getDocumentGenerationId());
+            if (documentOpt.isEmpty()) {
                 SendEmailResponse errorResponse = new SendEmailResponse();
                 errorResponse.setSuccess(false);
-                errorResponse.setMessage("Document generation not found");
+                errorResponse.setMessage("Document not found");
                 return ResponseEntity.status(404).body(errorResponse);
             }
             
-            DocumentGenerationResponseDto generation = generationOpt.get();
+            DocumentDto document = documentOpt.get();
             
-            // Check if generation is completed
-            if (generation.getStatus() != DocumentGeneration.GenerationStatus.COMPLETED) {
+            // Check if document is completed
+            if (document.getStatus() != Document.GenerationStatus.COMPLETED) {
                 SendEmailResponse errorResponse = new SendEmailResponse();
                 errorResponse.setSuccess(false);
                 errorResponse.setMessage("Le document n'est pas encore prêt");
@@ -428,33 +442,27 @@ public class DocumentController {
             }
             
             // Prepare attachments
-            List<File> attachments = List.of();
+            List<java.io.File> attachments = new java.util.ArrayList<>();
             
-            if (request.isIncludePdf() && generation.getPdfFilePath() != null) {
-                File pdfFile = new File(generation.getPdfFilePath());
+            if (request.isIncludePdf() && document.getPdfFilePath() != null) {
+                java.io.File pdfFile = new java.io.File(document.getPdfFilePath());
                 if (pdfFile.exists()) {
-                    attachments = new java.util.ArrayList<>(attachments);
                     attachments.add(pdfFile);
                 }
             }
             
-            if (request.isIncludeDocx() && generation.getGeneratedFilePath() != null) {
-                File docxFile = new File(generation.getGeneratedFilePath());
+            if (request.isIncludeDocx() && document.getGeneratedFilePath() != null) {
+                java.io.File docxFile = new java.io.File(document.getGeneratedFilePath());
                 if (docxFile.exists()) {
-                    if (attachments.isEmpty()) {
-                        attachments = new java.util.ArrayList<>();
-                    } else {
-                        attachments = new java.util.ArrayList<>(attachments);
-                    }
                     attachments.add(docxFile);
                 }
             }
             
             // If no specific attachments requested, default to PDF
-            if (attachments.isEmpty() && generation.getPdfFilePath() != null) {
-                File pdfFile = new File(generation.getPdfFilePath());
+            if (attachments.isEmpty() && document.getPdfFilePath() != null) {
+                java.io.File pdfFile = new java.io.File(document.getPdfFilePath());
                 if (pdfFile.exists()) {
-                    attachments = List.of(pdfFile);
+                    attachments.add(pdfFile);
                 }
             }
             
@@ -464,7 +472,7 @@ public class DocumentController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            log.error("Error sending email for generation: {}", request.getDocumentGenerationId(), e);
+            log.error("Error sending email for document: {}", request.getDocumentGenerationId(), e);
             
             SendEmailResponse errorResponse = new SendEmailResponse();
             errorResponse.setSuccess(false);
@@ -474,12 +482,10 @@ public class DocumentController {
         }
     }
     
-    // ===== FIN ENDPOINTS EMAIL =====
-    
     /**
      * Process email template variables
      */
-    private String processEmailVariables(String template, DocumentGenerationResponseDto generation) {
+    private String processEmailVariables(String template, DocumentDto document) {
         if (template == null) {
             return "";
         }
@@ -488,26 +494,24 @@ public class DocumentController {
         
         // Replace common variables
         processed = processed.replace("{templateDisplayName}", 
-            generation.getTemplateDisplayName() != null ? generation.getTemplateDisplayName() : "");
+            document.getTemplateName() != null ? document.getTemplateName() : "");
         processed = processed.replace("{documentName}", 
-            generation.getGeneratedFileName() != null ? generation.getGeneratedFileName() : "");
+            document.getGeneratedFileName() != null ? document.getGeneratedFileName() : "");
         processed = processed.replace("{companyName}", 
-            generation.getCompanyName() != null ? generation.getCompanyName() : "");
-        processed = processed.replace("{collaboratorName}", 
-            generation.getCollaboratorName() != null ? generation.getCollaboratorName() : "");
+            document.getCompanyName() != null ? document.getCompanyName() : "");
         processed = processed.replace("{generatedByName}", 
-            generation.getGeneratedByName() != null ? generation.getGeneratedByName() : "");
+            document.getGeneratedByName() != null ? document.getGeneratedByName() : "");
         
         // Format creation date
-        if (generation.getCreatedAt() != null) {
+        if (document.getCreatedAt() != null) {
             processed = processed.replace("{generationDate}", 
-                generation.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+                document.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
         }
         
         return processed;
     }
     
-       /**
+    /**
      * Get current user ID from security context
      */
     private UUID getCurrentUserId() {
