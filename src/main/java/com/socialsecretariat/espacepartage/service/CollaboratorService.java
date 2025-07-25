@@ -1,6 +1,7 @@
 package com.socialsecretariat.espacepartage.service;
 
 import com.socialsecretariat.espacepartage.dto.CollaboratorDto;
+import com.socialsecretariat.espacepartage.exception.OdooIntegrationException;
 import com.socialsecretariat.espacepartage.model.Collaborator;
 import com.socialsecretariat.espacepartage.model.Dimona;
 import com.socialsecretariat.espacepartage.repository.CollaboratorRepository;
@@ -8,6 +9,7 @@ import com.socialsecretariat.espacepartage.repository.CompanyRepository;
 import com.socialsecretariat.espacepartage.repository.DimonaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,12 +21,14 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class CollaboratorService {
 
     private final CollaboratorRepository collaboratorRepository;
     private final CompanyRepository companyRepository;
     private final DimonaRepository dimonaRepository;
     private final NotificationService notificationService;
+    private final OdooService odooService;
 
     public CollaboratorDto createCollaborator(CollaboratorDto dto) {
         if (collaboratorRepository.existsByNationalNumber(dto.getNationalNumber())) {
@@ -46,6 +50,23 @@ public class CollaboratorService {
             savedCollaborator.getCompany().getId(),
             null // We'll need to get the current user ID from the security context in a real implementation
         );
+
+        // Create Odoo task for new contract
+        try {
+            String taskName = "Créer un contrat pour " + collaboratorName;
+            String description = "Créer un contrat " + savedCollaborator.getContractType() + " pour le nouveau collaborateur " + collaboratorName + " qui est " + savedCollaborator.getType() +
+                                " chez " + savedCollaborator.getCompany().getName();
+            String deadline = LocalDate.now().plusDays(3).toString();
+            String priority = "3"; // Very High
+            Long projectId = 2L;
+            
+            odooService.createTask(taskName, description, deadline, priority, null, projectId);
+            log.info("Tâche Odoo créée avec succès pour le collaborateur {}", collaboratorName);
+            
+        } catch (OdooIntegrationException e) {
+            log.error("Erreur lors de la création de la tâche Odoo pour le collaborateur {}", 
+                collaboratorName, e);
+        }
 
         return toDto(savedCollaborator);
     }
@@ -165,4 +186,5 @@ public class CollaboratorService {
         dto.setUpdatedAt(collaborator.getUpdatedAt());
         return dto;
     }
+
 }
